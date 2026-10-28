@@ -9,6 +9,7 @@ $filterCoso      = $_GET['coso']      ?? ($_GET['kv'] ?? '');
 $filterLoaiphong = $_GET['loaiphong'] ?? '';
 $filterGia       = $_GET['ngansach']  ?? ($_GET['gia'] ?? '');
 $filterTag       = $_GET['tag']       ?? '';
+$filterSapxep    = $_GET['sapxep']    ?? 'moi-nhat';
 $q               = trim($_GET['q']    ?? '');
 
 // Xây dựng câu truy vấn an toàn
@@ -68,6 +69,14 @@ if ($filterTag === 'gan-truong') {
     $where[] = "(p.MoTa LIKE '%nữ%' OR p.MoTa LIKE '%nu%')";
 }
 
+// Xử lý sắp xếp kết quả
+$orderBy = "p.NgayDang DESC";
+if ($filterSapxep === 'gia-tang') {
+    $orderBy = "p.GiaThue ASC";
+} elseif ($filterSapxep === 'gia-giam') {
+    $orderBy = "p.GiaThue DESC";
+}
+
 $sql = "
     SELECT p.MaPhong, p.TenPhong, p.GiaThue, p.DienTich, p.TrangThai, p.NgayDang, p.MoTa,
            n.TenNhaTro, n.DiaChi, n.ViDo, n.KinhDo,
@@ -77,7 +86,7 @@ $sql = "
     JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro
     JOIN NguoiDung u ON n.MaChuTro = u.MaNguoiDung
     WHERE " . implode(' AND ', $where) . "
-    ORDER BY p.NgayDang DESC
+    ORDER BY {$orderBy}
 ";
 
 if (!empty($params)) {
@@ -293,6 +302,23 @@ include_once __DIR__ . '/dungchung/header.php';
       </div>
 
       <?php else: ?>
+      <!-- THANH HIỂN THỊ KẾT QUẢ VÀ SẮP XẾP (Thành viên 4) -->
+      <div class="flex items-center justify-between gap-3 text-xs bg-bg-main p-3 rounded-card border border-border-warm shadow-sm">
+        <span class="font-bold text-text-main flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-accent text-[18px]">real_estate_agent</span>
+          Tìm thấy <span class="text-accent tnum font-semibold"><?= count($dsPhong) ?></span> phòng trọ
+        </span>
+        <div class="flex items-center gap-2">
+          <label for="sort-select" class="text-text-sub font-medium shrink-0">Sắp xếp:</label>
+          <select id="sort-select" onchange="const u = new URL(window.location.href); u.searchParams.set('sapxep', this.value); window.location.href = u.toString();" 
+                  class="bg-bg-sub border border-border-warm text-text-main rounded-btn px-2.5 py-1 text-xs focus:outline-none focus:border-accent cursor-pointer font-medium">
+            <option value="moi-nhat" <?= $filterSapxep === 'moi-nhat' ? 'selected' : '' ?>>Mới nhất</option>
+            <option value="gia-tang" <?= $filterSapxep === 'gia-tang' ? 'selected' : '' ?>>Giá tăng dần</option>
+            <option value="gia-giam" <?= $filterSapxep === 'gia-giam' ? 'selected' : '' ?>>Giá giảm dần</option>
+          </select>
+        </div>
+      </div>
+
       <!-- DANH SÁCH PHÒNG THỰC TỪ DATABASE -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <?php foreach ($dsPhong as $p):
