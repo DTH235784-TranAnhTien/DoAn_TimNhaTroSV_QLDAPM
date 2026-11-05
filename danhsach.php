@@ -104,6 +104,23 @@ $tongPhong = count($dsPhong);
 // KPI tổng phòng đã duyệt trên toàn hệ thống
 $kpiTong = (int)($conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'DaDuyet' AND TrangThai = 'ConPhong'")->fetch_assoc()['c'] ?? 0);
 
+// Danh sách phòng đã lưu của sinh viên (nếu đã đăng nhập)
+$phongDaLuuIds = [];
+if (daDangNhap()) {
+    $ndHienTai = nguoiDungHienTai();
+    $mandHienTai = (int)($ndHienTai['mannd'] ?? 0);
+    if ($mandHienTai > 0) {
+        $stmtFav = $conn->prepare("SELECT MaPhong FROM DanhSachYeuThich WHERE MaSinhVien = ?");
+        $stmtFav->bind_param('i', $mandHienTai);
+        $stmtFav->execute();
+        $resFav = $stmtFav->get_result();
+        while ($rowFav = $resFav->fetch_assoc()) {
+            $phongDaLuuIds[] = (int)$rowFav['MaPhong'];
+        }
+        $stmtFav->close();
+    }
+}
+
 include_once __DIR__ . '/dungchung/header.php';
 ?>
 
@@ -345,6 +362,16 @@ include_once __DIR__ . '/dungchung/header.php';
             <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold inline-flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>Còn phòng
             </span>
+            <!-- Nút Lưu yêu thích (AJAX) -->
+            <?php $daLuu = in_array((int)$p['MaPhong'], $phongDaLuuIds, true); ?>
+            <button type="button" 
+                    onclick="event.stopPropagation(); toggleYeuThich(<?= (int)$p['MaPhong'] ?>, this)"
+                    title="<?= $daLuu ? 'Bỏ lưu phòng' : 'Lưu vào phòng yêu thích' ?>"
+                    class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-text-sub backdrop-blur-sm flex items-center justify-center transition-all duration-200 shadow-sm z-10">
+              <span class="material-symbols-outlined text-[19px] <?= $daLuu ? 'text-red-500 fill-1' : 'text-text-sub' ?>">
+                <?= $daLuu ? 'favorite' : 'favorite_border' ?>
+              </span>
+            </button>
             <span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/60 text-white text-[10px] font-semibold flex items-center gap-1 backdrop-blur-sm">
               <span class="material-symbols-outlined text-[13px]">location_on</span>Bấm định vị
             </span>
@@ -592,6 +619,56 @@ include_once __DIR__ . '/dungchung/header.php';
           setTimeout(() => initRealMap(), 100);
         }
       }
+    }
+  }
+
+  // Xử lý lưu / bỏ lưu phòng yêu thích qua AJAX (Thành viên 4)
+  async function toggleYeuThich(maPhong, btn) {
+    try {
+      const formData = new FormData();
+      formData.append('ma_phong', maPhong);
+
+      const res = await fetch('/DoAn_TimNhaTroSV_QLDAPM/sinhvien/yeuthich_toggle.php', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      if (data.require_login) {
+        if (typeof showToast === 'function') {
+          showToast(data.message, 'error');
+        } else {
+          alert(data.message);
+        }
+        setTimeout(() => {
+          window.location.href = '/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php';
+        }, 1200);
+        return;
+      }
+
+      if (data.success) {
+        const icon = btn.querySelector('.material-symbols-outlined');
+        if (data.action === 'added') {
+          icon.textContent = 'favorite';
+          icon.classList.remove('text-text-sub');
+          icon.classList.add('text-red-500');
+          btn.title = 'Bỏ lưu phòng';
+          if (typeof showToast === 'function') showToast(data.message, 'success');
+        } else {
+          icon.textContent = 'favorite_border';
+          icon.classList.remove('text-red-500');
+          icon.classList.add('text-text-sub');
+          btn.title = 'Lưu vào phòng yêu thích';
+          if (typeof showToast === 'function') showToast(data.message, 'info');
+        }
+      } else {
+        if (typeof showToast === 'function') {
+          showToast(data.message || 'Đã có lỗi xảy ra', 'error');
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi toggle yêu thích:', err);
+      if (typeof showToast === 'function') showToast('Không thể kết nối máy chủ.', 'error');
     }
   }
 
