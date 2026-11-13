@@ -305,5 +305,5 @@ Ghi chu:
 
 ================================================================
   Ghi chu: File nay duoc tao tu dong boi AI Assistant
-  Cap nhat lan cuoi: 10/11/2026
+  Cap nhat lan cuoi: 13/11/2026
 ================================================================
