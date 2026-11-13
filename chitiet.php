@@ -135,6 +135,189 @@ include_once __DIR__ . '/dungchung/header.php';
           </div>
         </div>
       </div>
+
+      <?php
+        // --- Danh gia ---
+        $stmtDG = $conn->prepare("SELECT dg.*, u.HoTen, u.AnhDaiDien FROM DanhGia dg JOIN NguoiDung u ON dg.MaSinhVien = u.MaNguoiDung WHERE dg.MaPhong = ? ORDER BY dg.NgayDanhGia ASC");
+        $stmtDG->bind_param('i', $id);
+        $stmtDG->execute();
+        $dsDG = $stmtDG->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmtDG->close();
+
+        $trungBinhSao = 0;
+        if (count($dsDG) > 0) {
+          $trungBinhSao = array_sum(array_column($dsDG, 'SoSao')) / count($dsDG);
+        }
+
+        // Kiem tra quyen danh gia (SinhVien co lich hen DaXacNhan hoac HoanThanh)
+        $coQuyen = false;
+        if (daDangNhap() && coVaiTro('SinhVien')) {
+          $ndHienTai = nguoiDungHienTai();
+          $maSV = (int)($ndHienTai['mannd'] ?? 0);
+          $stmtLH = $conn->prepare("SELECT MaLichHen FROM LichHen WHERE MaSinhVien = ? AND MaPhong = ? AND TrangThai IN ('DaXacNhan', 'HoanThanh') LIMIT 1");
+          $stmtLH->bind_param('ii', $maSV, $id);
+          $stmtLH->execute();
+          $coQuyen = ($stmtLH->get_result()->num_rows > 0);
+          $stmtLH->close();
+        }
+
+        function renderSao(int $n, int $max = 5): string {
+          $out = '';
+          for ($i = 1; $i <= $max; $i++) {
+            $out .= $i <= $n ? '<span class="text-yellow-400">★</span>' : '<span class="text-text-sub">☆</span>';
+          }
+          return $out;
+        }
+      ?>
+
+      <!-- Danh gia & Binh luan -->
+      <div class="bg-bg-main rounded-card border border-border-warm p-5 space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-text-main flex items-center gap-2">
+            <span class="material-symbols-outlined text-accent">star</span>Đánh giá phòng
+          </h2>
+          <?php if (count($dsDG) > 0): ?>
+          <span class="text-sm font-semibold text-text-main tnum">
+            <?= number_format($trungBinhSao, 1) ?> / 5
+            <span class="text-yellow-400">★</span>
+            <span class="text-text-sub text-xs">(<?= count($dsDG) ?> đánh giá)</span>
+          </span>
+          <?php endif; ?>
+        </div>
+
+        <?php if (count($dsDG) === 0): ?>
+        <p class="text-sm text-text-sub italic">Chưa có đánh giá nào cho phòng này.</p>
+        <?php else: ?>
+        <div class="space-y-4 divide-y divide-border-warm">
+          <?php foreach ($dsDG as $dg): ?>
+          <div class="pt-4 first:pt-0 space-y-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full overflow-hidden bg-bg-sub border border-border-warm shrink-0">
+                <?php if ($dg['AnhDaiDien']): ?>
+                <img src="<?= htmlspecialchars($dg['AnhDaiDien']) ?>" alt="<?= htmlspecialchars($dg['HoTen']) ?>" class="w-full h-full object-cover">
+                <?php else: ?>
+                <div class="w-full h-full flex items-center justify-center">
+                  <span class="material-symbols-outlined text-text-sub text-xl">person</span>
+                </div>
+                <?php endif; ?>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-text-main truncate"><?= htmlspecialchars($dg['HoTen']) ?></p>
+                <p class="text-xs text-text-sub"><?= $dg['NgayDanhGia'] ? date('d/m/Y', strtotime($dg['NgayDanhGia'])) : '' ?></p>
+              </div>
+              <div class="text-base shrink-0"><?= renderSao((int)$dg['SoSao']) ?></div>
+            </div>
+            <div class="flex flex-wrap gap-3 text-xs text-text-sub pl-12">
+              <span>An ninh: <?= renderSao((int)($dg['DiemAnNinh'] ?? 5)) ?></span>
+              <span>Giá cả: <?= renderSao((int)($dg['DiemGiaCa'] ?? 5)) ?></span>
+              <span>Thái độ: <?= renderSao((int)($dg['DiemThaiDoChuTro'] ?? 5)) ?></span>
+            </div>
+            <?php if (!empty($dg['NoiDung'])): ?>
+            <p class="text-sm text-text-main pl-12 leading-relaxed"><?= nl2br(htmlspecialchars($dg['NoiDung'])) ?></p>
+            <?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
+        <!-- Form danh gia -->
+        <?php if (!daDangNhap()): ?>
+        <div class="mt-2 p-4 bg-bg-sub rounded-btn border border-border-warm text-center space-y-2">
+          <p class="text-xs text-text-sub">Đăng nhập để đánh giá phòng này</p>
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php"
+             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-btn bg-accent text-white font-semibold text-xs">
+            <span class="material-symbols-outlined text-sm">login</span>Đăng nhập
+          </a>
+        </div>
+        <?php elseif ($coQuyen): ?>
+        <div class="mt-2 pt-4 border-t border-border-warm space-y-3">
+          <h3 class="text-sm font-bold text-text-main">Viết đánh giá của bạn</h3>
+          <form method="POST" action="/DoAn_TimNhaTroSV_QLDAPM/sinhvien/danhgia.php" class="space-y-3">
+            <input type="hidden" name="ma_phong" value="<?= $id ?>">
+            <!-- Tong sao -->
+            <div>
+              <label class="text-xs text-text-sub block mb-1">Điểm tổng thể <span class="text-status-red-text">*</span></label>
+              <div class="flex gap-1" id="star-wrapper">
+                <?php for ($s = 1; $s <= 5; $s++): ?>
+                <label class="cursor-pointer text-2xl text-text-sub hover:text-yellow-400 transition-colors" data-val="<?= $s ?>">
+                  <input type="radio" name="so_sao" value="<?= $s ?>" class="sr-only" required>
+                  ★
+                </label>
+                <?php endfor; ?>
+              </div>
+            </div>
+            <!-- Diem con -->
+            <div class="grid grid-cols-3 gap-3">
+              <?php foreach (['an_ninh' => 'An ninh', 'gia_ca' => 'Giá cả', 'thai_do' => 'Thái độ'] as $k => $lbl): ?>
+              <div>
+                <label class="text-xs text-text-sub block mb-1"><?= $lbl ?></label>
+                <select name="<?= $k ?>" required
+                  class="w-full px-2 py-1.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
+                  <option value="">--</option>
+                  <?php for ($n = 1; $n <= 5; $n++): ?>
+                  <option value="<?= $n ?>"><?= $n ?> sao</option>
+                  <?php endfor; ?>
+                </select>
+              </div>
+              <?php endforeach; ?>
+            </div>
+            <!-- Nhan xet -->
+            <div>
+              <label class="text-xs text-text-sub block mb-1">Nhận xét</label>
+              <textarea name="nhan_xet" rows="3" placeholder="Chia sẻ trải nghiệm của bạn về phòng này..."
+                class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent resize-none"></textarea>
+            </div>
+            <button type="submit"
+              class="w-full py-2.5 rounded-btn bg-accent text-white font-semibold text-sm hover:opacity-90 transition-opacity">
+              Gửi đánh giá
+            </button>
+          </form>
+        </div>
+        <?php else: ?>
+        <div class="mt-2 p-3 bg-bg-sub rounded-btn border border-border-warm text-center">
+          <p class="text-xs text-text-sub">Chỉ sinh viên đã xem phòng mới được đánh giá</p>
+        </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- Bao cao vi pham -->
+      <div class="bg-bg-main rounded-card border border-border-warm p-5">
+        <button type="button" onclick="document.getElementById('baocao-form').classList.toggle('hidden')"
+          class="flex items-center gap-1.5 text-xs text-status-red-text hover:underline font-semibold transition-colors">
+          <span class="material-symbols-outlined text-sm">flag</span>Báo cáo vi phạm
+        </button>
+        <div id="baocao-form" class="hidden mt-4 space-y-3">
+          <?php if (!daDangNhap()): ?>
+          <p class="text-xs text-text-sub">Bạn cần <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php" class="text-accent underline">đăng nhập</a> để báo cáo vi phạm.</p>
+          <?php else: ?>
+          <form method="POST" action="/DoAn_TimNhaTroSV_QLDAPM/sinhvien/baocao.php" class="space-y-3">
+            <input type="hidden" name="ma_phong" value="<?= $id ?>">
+            <div>
+              <label class="text-xs text-text-sub block mb-1">Lý do báo cáo <span class="text-status-red-text">*</span></label>
+              <select name="ly_do" required
+                class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
+                <option value="">-- Chọn lý do --</option>
+                <option value="Thong tin sai lech">Thông tin sai lệch</option>
+                <option value="Lua dao">Lừa đảo</option>
+                <option value="Noi dung khong phu hop">Nội dung không phù hợp</option>
+                <option value="Phong khong ton tai">Phòng không tồn tại</option>
+                <option value="Khac">Khác</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-text-sub block mb-1">Mô tả thêm (không bắt buộc)</label>
+              <textarea name="mo_ta" rows="3" placeholder="Mô tả chi tiết vi phạm..."
+                class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent resize-none"></textarea>
+            </div>
+            <button type="submit"
+              class="px-4 py-2 rounded-btn bg-status-red-bg text-status-red-text border border-status-red-text text-xs font-semibold hover:bg-status-red-text hover:text-white transition-all duration-200">
+              Gửi báo cáo
+            </button>
+          </form>
+          <?php endif; ?>
+        </div>
+      </div>
+
     </div>
 
     <!-- Cot phai: thong tin chu tro + dat lich -->
@@ -221,5 +404,29 @@ include_once __DIR__ . '/dungchung/header.php';
   </div>
   <?php endif; ?>
 </div>
+
+<script>
+(function () {
+  var wrapper = document.getElementById('star-wrapper');
+  if (!wrapper) return;
+  var labels = wrapper.querySelectorAll('label');
+  function paint(val) {
+    labels.forEach(function (lbl) {
+      lbl.style.color = parseInt(lbl.dataset.val) <= val ? '#facc15' : '';
+    });
+  }
+  labels.forEach(function (lbl) {
+    lbl.addEventListener('mouseenter', function () { paint(parseInt(lbl.dataset.val)); });
+    lbl.addEventListener('click', function () {
+      lbl.querySelector('input').checked = true;
+      paint(parseInt(lbl.dataset.val));
+    });
+  });
+  wrapper.addEventListener('mouseleave', function () {
+    var checked = wrapper.querySelector('input:checked');
+    paint(checked ? parseInt(checked.value) : 0);
+  });
+})();
+</script>
 
 <?php include_once __DIR__ . '/dungchung/footer.php'; ?>
