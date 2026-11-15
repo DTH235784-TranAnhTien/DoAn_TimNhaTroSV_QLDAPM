@@ -10,7 +10,7 @@ include_once __DIR__ . '/dungchung/header.php';
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
       <!-- Nội dung Banner bên trái -->
       <div class="lg:col-span-7 space-y-4">
-        <span class="inline-block px-3 py-1 rounded-full bg-status-green-bg text-accent text-xs font-semibold">
+        <span class="inline-block px-3 py-1 rounded-lg bg-status-green-bg text-accent text-xs font-semibold">
           Kênh thông tin nhà trọ sinh viên ĐH An Giang
         </span>
         <h1 class="text-3xl sm:text-4xl font-bold text-text-main tracking-tight leading-tight">
@@ -20,10 +20,10 @@ include_once __DIR__ . '/dungchung/header.php';
           Giá niêm yết trực tiếp từ chủ nhà tại P. Đông Xuyên, Mỹ Xuyên, Bình Khánh. Đầy đủ thông tin diện tích, điện nước và bản đồ vị trí thực tế.
         </p>
         <div class="flex flex-wrap items-center gap-3 pt-1">
-          <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-5 py-2.5 rounded-full bg-accent hover:bg-blue-700 text-white font-semibold text-sm transition-colors shadow-sm">
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-5 py-2.5 rounded-btn bg-accent hover:bg-blue-700 text-white font-semibold text-sm transition-colors shadow-sm">
             Khám phá bản đồ phòng
           </a>
-          <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="px-5 py-2.5 rounded-full border border-border-warm bg-bg-main text-text-main hover:bg-bg-sub font-semibold text-sm transition-colors">
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main hover:bg-bg-sub font-semibold text-sm transition-colors">
             Tìm bạn ở ghép
           </a>
         </div>
@@ -32,16 +32,16 @@ include_once __DIR__ . '/dungchung/header.php';
       <!-- Ảnh Banner minh họa bên phải -->
       <div class="lg:col-span-5">
         <div class="relative rounded-2xl overflow-hidden border border-border-warm shadow-md aspect-[16/10] bg-bg-sub">
-          <img src="/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchammot.jpg"
+          <img src="/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/hero-banner.jpg"
                alt="Phòng trọ sinh viên CampusNest AGU"
                onerror="this.style.display='none'"
                class="w-full h-full object-cover">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/55 via-transparent to-transparent"></div>
           <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs">
-            <span class="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md font-semibold">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-900/55 backdrop-blur-md font-semibold">
               0đ phí môi giới · Xác thực chính chủ
             </span>
-            <span class="px-2.5 py-1 rounded-full bg-accent font-semibold">HK1 <?= date('Y') ?></span>
+            <span class="px-2.5 py-1 rounded-lg bg-accent font-semibold">HK1 <?= date('Y') ?></span>
           </div>
         </div>
       </div>
@@ -88,10 +88,10 @@ include_once __DIR__ . '/dungchung/header.php';
 
       <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border-warm text-xs">
         <span class="text-text-sub font-medium">Lọc nhanh:</span>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=gan-truong" class="px-2.5 py-1 rounded-full bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Cách cổng trường &lt; 500m</a>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=tu-do" class="px-2.5 py-1 rounded-full bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Giờ giấc tự do 24/7</a>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=may-lanh" class="px-2.5 py-1 rounded-full bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Có máy lạnh</a>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=nu-rieng" class="px-2.5 py-1 rounded-full bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Khu trọ nữ riêng</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=gan-truong" class="px-2.5 py-1 rounded-lg bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Cách cổng trường &lt; 500m</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=tu-do" class="px-2.5 py-1 rounded-lg bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Giờ giấc tự do 24/7</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=may-lanh" class="px-2.5 py-1 rounded-lg bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Có máy lạnh</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=nu-rieng" class="px-2.5 py-1 rounded-lg bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all">Khu trọ nữ riêng</a>
         <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="ml-auto text-accent font-semibold hover:underline">Tìm bạn ở ghép →</a>
       </div>
     </form>

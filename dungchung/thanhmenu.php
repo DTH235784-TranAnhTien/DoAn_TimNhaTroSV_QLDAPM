@@ -69,7 +69,7 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
             $dsThongBao[] = [
                 'tieuDe' => $cntBaoCao . ' báo cáo vi phạm chờ xử lý',
                 'moTa'   => 'Kiểm tra phản ánh từ sinh viên',
-                'url'    => '/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=reports',
+                'url'    => '/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=fraud',
                 'icon'   => 'flag'
             ];
         }
@@ -112,17 +112,6 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
         <span class="text-[11px] text-text-sub block mt-0.5 font-medium">Trọ sinh viên AGU</span>
       </div>
     </a>
-
-    <!-- Thanh tìm kiếm trung tâm dạng Pill (giống ảnh mẫu) -->
-    <form action="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" method="GET" class="hidden md:flex items-center flex-1 max-w-sm bg-slate-100 hover:bg-slate-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-accent/20 focus-within:border-accent border border-transparent rounded-full pl-4 pr-1.5 py-1 transition-all">
-      <input type="search" name="q" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>"
-             placeholder="Tìm phòng, Ung Văn Khiêm, Mỹ Xuyên..."
-             class="w-full bg-transparent text-xs sm:text-sm text-text-main placeholder-text-sub focus:outline-none">
-      <button type="submit" aria-label="Tìm kiếm"
-              class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center shrink-0 hover:bg-blue-700 transition-colors shadow-sm">
-        <span class="material-symbols-outlined text-[18px]">search</span>
-      </button>
-    </form>
 
     <!-- Nav Links gọn gàng trên 1 hàng (Desktop) -->
     <nav class="hidden xl:flex items-center gap-0.5 shrink-0">
