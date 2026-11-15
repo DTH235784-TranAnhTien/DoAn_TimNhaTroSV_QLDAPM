@@ -18,12 +18,58 @@ $where  = ["p.TrangThaiDuyet = 'DaDuyet'", "p.TrangThai = 'ConPhong'"];
 $params = [];
 $types  = '';
 
-// 1. Tìm kiếm từ khóa
+// 1. Tìm kiếm nhiều từ khóa & mô tả yêu cầu tự nhiên
+$tuKhoaList = [];
 if ($q !== '') {
-    $like = "%$q%";
-    $where[] = "(p.TenPhong LIKE ? OR n.DiaChi LIKE ? OR n.TenNhaTro LIKE ? OR p.MoTa LIKE ?)";
-    $params = array_merge($params, [$like, $like, $like, $like]);
-    $types .= 'ssss';
+    $qLower = mb_strtolower($q, 'UTF-8');
+
+    // Tự động nhận diện mức giá tối đa (vd: "dưới 2 triệu", "duoi 1.8tr", "tầm 1tr5", "800k")
+    if (preg_match('/(?:dưới|duoi|tối đa|toi da|tầm|tam|<=|<)?\s*(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr)\b/u', $qLower, $mGia)) {
+        $giaMax = (float)str_replace(',', '.', $mGia[1]) * 1000000;
+        if ($giaMax > 0) {
+            $where[] = "p.GiaThue <= ?";
+            $params[] = $giaMax;
+            $types .= 'd';
+        }
+    } elseif (preg_match('/(?:dưới|duoi|tầm|tam|<=|<)?\s*(\d+)\s*k\b/u', $qLower, $mGiaK)) {
+        $giaMax = (float)$mGiaK[1] * 1000;
+        if ($giaMax >= 300000) {
+            $where[] = "p.GiaThue <= ?";
+            $params[] = $giaMax;
+            $types .= 'd';
+        }
+    }
+
+    // Tự động nhận diện diện tích tối thiểu (vd: "trên 20m2", "từ 18 m2")
+    if (preg_match('/(?:trên|tren|từ|tu|>=|>)?\s*(\d+(?:[.,]\d+)?)\s*m(?:2|²)\b/u', $qLower, $mDt)) {
+        $dtMin = (float)str_replace(',', '.', $mDt[1]);
+        if ($dtMin > 0) {
+            $where[] = "p.DienTich >= ?";
+            $params[] = $dtMin;
+            $types .= 'd';
+        }
+    }
+
+    // Làm sạch chuỗi khỏi cụm giá/diện tích và stop-words để tách từ khóa thực
+    $qClean = preg_replace('/\b(?:\d+(?:[.,]\d+)?\s*(?:triệu|trieu|tr|k|m2|m²)|dưới|duoi|trên|tren|từ|tu|tối đa|toi da|tầm|tam|phòng|phong|trọ|tro|tìm|tim|muốn|muon|có|co|gần|gan|giá|gia|đồng|dong|ở|o|khu|vực|vuc|và|va|hay|với|voi|cho|cần|can)\b/u', ' ', $qLower);
+    $rawTokens = preg_split('/[\s,;.\-\/]+/u', trim($qClean), -1, PREG_SPLIT_NO_EMPTY);
+    foreach ($rawTokens as $tok) {
+        if (mb_strlen($tok, 'UTF-8') >= 2) {
+            $tuKhoaList[] = $tok;
+        }
+    }
+    $tuKhoaList = array_values(array_unique($tuKhoaList));
+
+    if (!empty($tuKhoaList)) {
+        $orParts = [];
+        foreach ($tuKhoaList as $kw) {
+            $likeKw = "%$kw%";
+            $orParts[] = "(p.TenPhong LIKE ? OR n.DiaChi LIKE ? OR n.TenNhaTro LIKE ? OR p.MoTa LIKE ? OR EXISTS (SELECT 1 FROM PhongTro_TienIch pt JOIN TienIch ti ON pt.MaTienIch = ti.MaTienIch WHERE pt.MaPhong = p.MaPhong AND ti.TenTienIch LIKE ?))";
+            $params = array_merge($params, [$likeKw, $likeKw, $likeKw, $likeKw, $likeKw]);
+            $types .= 'sssss';
+        }
+        $where[] = '(' . implode(' OR ', $orParts) . ')';
+    }
 }
 
 // 2. Lọc theo cơ sở / khu vực
@@ -147,6 +193,12 @@ include_once __DIR__ . '/dungchung/header.php';
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
+  /* Đảm bảo tile Leaflet không bị Tailwind CSS làm méo hoặc ẩn */
+  #real-map .leaflet-pane img,
+  #real-map .leaflet-tile {
+    max-width: none !important;
+    max-height: none !important;
+  }
   /* Tùy chỉnh marker & popup bản đồ Leaflet */
   .leaflet-popup-content-wrapper {
     background-color: #FFFFFF;
@@ -212,11 +264,11 @@ include_once __DIR__ . '/dungchung/header.php';
 
 <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
 
-  <!-- ================= BỐ CỤC 2 CỘT CHUẨN ẢNH MẪU: TRÁI DANH SÁCH + PHẢI BẢN ĐỒ ================= -->
+  <!-- ================= BỐ CỤC 2 CỘT: TRÁI DANH SÁCH (7) + PHẢI BẢN ĐỒ NHỎ GỌN (5) ================= -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-    <!-- CỘT TRÁI: TIÊU ĐỀ, NÚT LỌC PILL, DANH SÁCH PHÒNG (lg:col-span-6) -->
-    <div id="explore-list-col" class="lg:col-span-6 space-y-4">
+    <!-- CỘT TRÁI: TIÊU ĐỀ, THANH TÌM KIẾM, NÚT LỌC PILL, DANH SÁCH PHÒNG (lg:col-span-7) -->
+    <div id="explore-list-col" class="lg:col-span-7 space-y-4">
 
       <!-- Hàng tiêu đề + Toggle Ở ghép (giống hệt ảnh mẫu) -->
       <div class="flex items-start justify-between gap-3">
@@ -242,6 +294,23 @@ include_once __DIR__ . '/dungchung/header.php';
           </button>
         </div>
       </div>
+
+      <!-- Thanh tìm kiếm nhiều từ khóa / mô tả yêu cầu đặt phía dưới tiêu đề -->
+      <form action="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" method="GET" class="flex items-center gap-2 bg-bg-main border border-border-warm rounded-btn pl-3.5 pr-1.5 py-1.5 shadow-sm focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15 transition-all">
+        <?php if ($filterGia !== ''): ?><input type="hidden" name="ngansach" value="<?= htmlspecialchars($filterGia) ?>"><?php endif; ?>
+        <?php if ($filterLoaiphong !== ''): ?><input type="hidden" name="loaiphong" value="<?= htmlspecialchars($filterLoaiphong) ?>"><?php endif; ?>
+        <?php if ($filterDientich !== ''): ?><input type="hidden" name="dientich" value="<?= htmlspecialchars($filterDientich) ?>"><?php endif; ?>
+        <?php if ($filterCoso !== ''): ?><input type="hidden" name="coso" value="<?= htmlspecialchars($filterCoso) ?>"><?php endif; ?>
+        <?php if ($filterTag !== ''): ?><input type="hidden" name="tag" value="<?= htmlspecialchars($filterTag) ?>"><?php endif; ?>
+        <?php if ($filterSapxep !== 'moi-nhat'): ?><input type="hidden" name="sapxep" value="<?= htmlspecialchars($filterSapxep) ?>"><?php endif; ?>
+        <input type="search" name="q" value="<?= htmlspecialchars($q) ?>"
+               placeholder="Nhập từ khóa hoặc mô tả (VD: gác lửng máy lạnh ung văn khiêm dưới 2 triệu)..."
+               class="w-full bg-transparent text-xs sm:text-sm text-text-main placeholder-text-sub focus:outline-none">
+        <button type="submit"
+                class="px-4 py-2 rounded-btn bg-accent text-white text-xs font-semibold shrink-0 hover:bg-blue-700 transition-colors">
+          Tìm phòng
+        </button>
+      </form>
 
       <!-- Hàng nút lọc Pill + View Switcher + Sắp xếp (giống ảnh mẫu) -->
       <form action="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" method="GET" class="flex flex-wrap items-center justify-between gap-2 pb-1">
@@ -485,31 +554,27 @@ include_once __DIR__ . '/dungchung/header.php';
       <?php endif; ?>
     </div>
 
-    <!-- CỘT PHẢI: BẢN ĐỒ THỰC TẾ TRÀN VIỀN GIỐNG ẢNH MẪU (lg:col-span-6) -->
-    <aside id="explore-map-panel" class="lg:col-span-6 lg:sticky lg:top-20">
-      <div class="relative w-full h-[540px] lg:h-[calc(100vh-105px)] min-h-[540px] rounded-2xl border border-border-warm overflow-hidden shadow-sm bg-slate-100">
-        <!-- Thanh nổi phía trên bản đồ (giống "Search as I move the map") -->
-        <div class="absolute top-3 left-1/2 -translate-x-1/2 z-[400] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-full px-3.5 py-1.5 shadow-md flex items-center gap-2 text-xs whitespace-nowrap">
+    <!-- CỘT PHẢI: BẢN ĐỒ THỰC TẾ GỌN GÀNG CHỪA KHOẢNG THỞ (lg:col-span-5) -->
+    <aside id="explore-map-panel" class="lg:col-span-5 lg:sticky lg:top-20">
+      <div class="relative w-full h-[440px] lg:h-[520px] rounded-2xl border border-border-warm overflow-hidden shadow-sm bg-slate-100" style="min-height: 440px;">
+        <!-- Thanh nổi phía trên bản đồ -->
+        <div class="absolute top-3 left-1/2 -translate-x-1/2 z-[400] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-btn px-3 py-1.5 shadow-md flex items-center gap-2 text-xs whitespace-nowrap">
           <span class="text-text-main font-medium">Định vị nhanh:</span>
-          <button type="button" onclick="flyToKhuA()" class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent font-semibold hover:bg-blue-100 transition-colors">Khu A</button>
-          <button type="button" onclick="flyToKhuB()" class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent font-semibold hover:bg-blue-100 transition-colors">Khu B</button>
+          <button type="button" onclick="flyToAGU()" class="px-2.5 py-0.5 rounded-lg bg-status-green-bg text-accent font-semibold hover:bg-blue-100 transition-colors">Trường ĐH An Giang</button>
         </div>
 
-        <!-- Cụm nút công cụ nổi góc dưới trái (giống ảnh mẫu) -->
+        <!-- Cụm nút công cụ nổi góc dưới trái -->
         <div class="absolute bottom-4 left-3 z-[400] flex flex-col gap-1.5">
-          <button type="button" onclick="flyToKhuA()" title="Tới Khu A ĐH An Giang" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
+          <button type="button" onclick="flyToAGU()" title="Tới Trường Đại Học An Giang" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
             <span class="material-symbols-outlined text-[18px]">school</span>
           </button>
-          <button type="button" onclick="flyToKhuB()" title="Tới Khu B ĐH An Giang" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
-            <span class="material-symbols-outlined text-[18px]">directions_bus</span>
-          </button>
-          <button type="button" onclick="if(map){map.setView(AGU_KHU_A, 15);}" title="Đưa bản đồ về mặc định" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
+          <button type="button" onclick="if(map){map.setView(AGU_CAMPUS, 15);}" title="Đưa bản đồ về mặc định" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
             <span class="material-symbols-outlined text-[18px]">my_location</span>
           </button>
         </div>
 
         <!-- Leaflet Map Container -->
-        <div id="real-map" class="w-full h-full z-0"></div>
+        <div id="real-map" class="w-full h-full z-0" style="width: 100%; height: 100%; min-height: 440px;"></div>
       </div>
     </aside>
 
@@ -518,10 +583,8 @@ include_once __DIR__ . '/dungchung/header.php';
 
 <!-- ================= SCRIPT KHỞI TẠO BẢN ĐỒ THỰC TẾ LEAFLET ================= -->
 <script>
-  // Dữ liệu tọa độ 2 cơ sở chính của Trường Đại học An Giang
-  const AGU_KHU_A = [10.3715, 105.4326]; // 18 Ung Văn Khiêm, P. Đông Xuyên, TP. Long Xuyên
-  const AGU_KHU_B = [10.3789, 105.4385]; // 25 Võ Thị Sáu, P. Mỹ Xuyên, TP. Long Xuyên
-  const AGU_KTX   = [10.3698, 105.4312]; // Ký túc xá ĐH An Giang
+  // Tọa độ Trường Đại Học An Giang
+  const AGU_CAMPUS = [10.3713741, 105.4324531]; // 18 Ung Văn Khiêm, P. Đông Xuyên, TP. Long Xuyên
 
   // Danh sách phòng trọ thực từ PHP truyền sang JS
   const danhSachPhong = <?= json_encode($dsPhong, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
@@ -531,63 +594,57 @@ include_once __DIR__ . '/dungchung/header.php';
 
   function initRealMap() {
     const mapContainer = document.getElementById('real-map');
-    if (!mapContainer || map) return;
+    if (!mapContainer || map || typeof L === 'undefined') return;
 
-    // 1. Khởi tạo bản đồ trung tâm tại ĐH An Giang (Khu A)
+    // 1. Khởi tạo bản đồ trung tâm tại Trường Đại Học An Giang
     map = L.map('real-map', {
-      center: AGU_KHU_A,
-      zoom: 15,
+      center: AGU_CAMPUS,
+      zoom: 14,
       zoomControl: true,
       scrollWheelZoom: true
     });
 
-    // 2. Tải bản đồ thực tế từ OpenStreetMap Tile Server
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+    // 2. Tải bản đồ Google Maps (Tiếng Việt) kèm fallback OpenStreetMap
+    const tileLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=vi&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['0', '1', '2', '3'],
+      attribution: '&copy; Google Maps'
     }).addTo(map);
-
-    // 3. Ghim 2 cơ sở ĐH An Giang với Icon đặc biệt
-    const iconKhuA = L.divIcon({
-      className: 'custom-school-pin',
-      html: '<span>🎓 ĐH An Giang (Khu A)</span>',
-      iconSize: [150, 30],
-      iconAnchor: [75, 30]
+    tileLayer.on('tileerror', function () {
+      if (!window._osmFallbackAdded) {
+        window._osmFallbackAdded = true;
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+      }
     });
-    L.marker(AGU_KHU_A, { icon: iconKhuA }).addTo(map)
+
+    // 3. Ghim Trường Đại Học An Giang
+    const iconAGU = L.divIcon({
+      className: 'custom-school-pin',
+      html: '<span>🎓 Trường Đại Học An Giang</span>',
+      iconSize: [185, 30],
+      iconAnchor: [92, 30]
+    });
+    L.marker(AGU_CAMPUS, { icon: iconAGU }).addTo(map)
       .bindPopup(`
         <div class="p-1">
-          <strong class="text-sm font-bold text-gray-900 block">Trường Đại học An Giang — Khu A</strong>
+          <strong class="text-sm font-bold text-gray-900 block">Trường Đại Học An Giang</strong>
           <p class="text-xs text-gray-600 mt-1">Số 18 Ung Văn Khiêm, P. Đông Xuyên, TP. Long Xuyên</p>
-        </div>
-      `);
-
-    const iconKhuB = L.divIcon({
-      className: 'custom-school-pin',
-      html: '<span>🎓 ĐH An Giang (Khu B)</span>',
-      iconSize: [150, 30],
-      iconAnchor: [75, 30]
-    });
-    L.marker(AGU_KHU_B, { icon: iconKhuB }).addTo(map)
-      .bindPopup(`
-        <div class="p-1">
-          <strong class="text-sm font-bold text-gray-900 block">Trường Đại học An Giang — Khu B</strong>
-          <p class="text-xs text-gray-600 mt-1">Số 25 Võ Thị Sáu, P. Mỹ Xuyên, TP. Long Xuyên</p>
         </div>
       `);
 
     // 4. Ghim các phòng trọ thực từ Database lên bản đồ
     danhSachPhong.forEach((p, idx) => {
-      // Nếu phòng có tọa độ thực trong DB thì dùng, nếu chưa có tạo vị trí quanh khu vực Ung Văn Khiêm / Võ Thị Sáu
       let lat = parseFloat(p.ViDo);
       let lng = parseFloat(p.KinhDo);
 
       if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-        // Tọa độ giả định sát quanh hẻm Ung Văn Khiêm / Võ Thị Sáu dựa trên chỉ số index
-        const offsetLat = (Math.sin(idx * 1.5) * 0.0035);
-        const offsetLng = (Math.cos(idx * 1.5) * 0.0035);
-        lat = (p.DiaChi && p.DiaChi.includes('Võ Thị Sáu')) ? (AGU_KHU_B[0] + offsetLat) : (AGU_KHU_A[0] + offsetLat);
-        lng = (p.DiaChi && p.DiaChi.includes('Võ Thị Sáu')) ? (AGU_KHU_B[1] + offsetLng) : (AGU_KHU_A[1] + offsetLng);
+        const offsetLat = (Math.sin(idx * 1.5) * 0.0042);
+        const offsetLng = (Math.cos(idx * 1.5) * 0.0042);
+        lat = AGU_CAMPUS[0] + offsetLat;
+        lng = AGU_CAMPUS[1] + offsetLng;
       }
 
       const giaF = Number(p.GiaThue || 0).toLocaleString('vi-VN');
@@ -609,9 +666,12 @@ include_once __DIR__ . '/dungchung/header.php';
             <strong class="text-xs font-bold text-gray-900 block leading-tight">${p.TenPhong}</strong>
             <p class="text-[11px] text-gray-600 mt-0.5">${p.DiaChi || ''}</p>
           </div>
-          <div class="flex items-center justify-between pt-1 border-t border-gray-200">
-            <span class="text-xs font-bold text-emerald-800">${giaF} đ/tháng</span>
-            <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=${p.MaPhong}" class="text-xs font-bold text-emerald-700 underline">Xem phòng →</a>
+          <div class="flex items-center justify-between gap-2 pt-1 border-t border-gray-200">
+            <span class="text-xs font-bold text-accent">${giaF} đ/tháng</span>
+            <div class="flex items-center gap-2">
+              <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" rel="noopener" class="text-[11px] font-semibold text-text-sub hover:text-accent underline">Google Maps</a>
+              <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=${p.MaPhong}" class="text-xs font-bold text-accent underline">Xem phòng →</a>
+            </div>
           </div>
         </div>
       `;
@@ -642,14 +702,9 @@ include_once __DIR__ . '/dungchung/header.php';
     }
   }
 
-  // Định vị nhanh tới Khu A
-  function flyToKhuA() {
-    if (map) map.flyTo(AGU_KHU_A, 16, { duration: 1 });
-  }
-
-  // Định vị nhanh tới Khu B
-  function flyToKhuB() {
-    if (map) map.flyTo(AGU_KHU_B, 16, { duration: 1 });
+  // Định vị nhanh tới Trường Đại Học An Giang
+  function flyToAGU() {
+    if (map) map.flyTo(AGU_CAMPUS, 16, { duration: 1 });
   }
 
   // Bật/tắt bản đồ
@@ -758,9 +813,14 @@ include_once __DIR__ . '/dungchung/header.php';
     }
   }
 
-  // Khởi tạo bản đồ khi tải trang xong
+  // Khởi tạo bản đồ khi tải trang xong + cập nhật kích thước sau khi Tailwind render
   document.addEventListener('DOMContentLoaded', () => {
     initRealMap();
+    setTimeout(() => { if (map) map.invalidateSize(); }, 350);
+  });
+  window.addEventListener('load', () => {
+    if (!map) initRealMap();
+    if (map) map.invalidateSize();
   });
 </script>
 
