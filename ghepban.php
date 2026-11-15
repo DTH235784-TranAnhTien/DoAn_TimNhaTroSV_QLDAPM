@@ -125,11 +125,116 @@ $where = ["h.TrangThai = 'DangTim'"];
 $params = [];
 $types  = '';
 
-if ($q !== '') {
-    $like = "%$q%";
-    $where[] = "(u.HoTen LIKE ? OR h.KhuVucUuTien LIKE ? OR h.MoTaBanThan LIKE ?)";
-    $params = array_merge($params, [$like, $like, $like]);
-    $types .= 'sss';
+// Phân tích mô tả yêu cầu / nhiều từ khóa của người dùng
+function phanTichMoTaYeuCau(string $text): array {
+    $lower = mb_strtolower(trim($text), 'UTF-8');
+    $parsed = [
+        'GioiTinh'      => null,
+        'NganSachToiDa' => null,
+        'KhuVucUuTien'  => '',
+        'GioGiac'       => null,
+        'HutThuoc'      => null,
+        'NuoiThuCung'   => null,
+        'keywords'      => [],
+        'badges'        => [],
+    ];
+
+    if ($lower === '') return $parsed;
+
+    // 1. Giới tính
+    if (preg_match('/\b(?:nữ|nu|bạn gái|ban gai)\b/u', $lower)) {
+        $parsed['GioiTinh'] = 'Nu';
+        $parsed['badges'][] = 'Giới tính: Nữ';
+    } elseif (preg_match('/\b(?:nam|bạn trai|ban trai)\b/u', $lower)) {
+        $parsed['GioiTinh'] = 'Nam';
+        $parsed['badges'][] = 'Giới tính: Nam';
+    }
+
+    // 2. Ngân sách (vd: "1.5 triệu", "1tr5", "1tr2", "1.2tr", "800k")
+    if (preg_match('/(\d+)\s*tr\s*(\d+)/u', $lower, $mTr)) {
+        $val = (float)$mTr[1] * 1000000 + (float)str_pad($mTr[2], 6, '0', STR_PAD_RIGHT) / 1000000 * 1000000;
+        // vd 1tr5 => 1 + 0.5 = 1.5tr
+        $val = ((float)$mTr[1] + (float)('0.' . $mTr[2])) * 1000000;
+        $parsed['NganSachToiDa'] = $val;
+        $parsed['badges'][] = 'Ngân sách ≤ ' . number_format($val, 0, ',', '.') . ' đ';
+    } elseif (preg_match('/(\d+(?:[.,]\d+)?)\s*(?:triệu|trieu|tr)\b/u', $lower, $mTr2)) {
+        $val = (float)str_replace(',', '.', $mTr2[1]) * 1000000;
+        $parsed['NganSachToiDa'] = $val;
+        $parsed['badges'][] = 'Ngân sách ≤ ' . number_format($val, 0, ',', '.') . ' đ';
+    } elseif (preg_match('/(\d+)\s*k\b/u', $lower, $mK)) {
+        $val = (float)$mK[1] * 1000;
+        if ($val >= 300000) {
+            $parsed['NganSachToiDa'] = $val;
+            $parsed['badges'][] = 'Ngân sách ≤ ' . number_format($val, 0, ',', '.') . ' đ';
+        }
+    }
+
+    // 3. Giờ giấc
+    if (preg_match('/(?:ngủ sớm|ngu som|về sớm|ve som|sớm|som)/u', $lower)) {
+        $parsed['GioGiac'] = 'Som';
+        $parsed['badges'][] = 'Ngủ sớm';
+    } elseif (preg_match('/(?:thức khuya|thuc khuya|khuya)/u', $lower)) {
+        $parsed['GioGiac'] = 'Khuya';
+        $parsed['badges'][] = 'Thức khuya';
+    } elseif (preg_match('/(?:tự do|tu do)/u', $lower)) {
+        $parsed['GioGiac'] = 'TuDo';
+        $parsed['badges'][] = 'Giờ giấc tự do';
+    }
+
+    // 4. Hút thuốc
+    if (preg_match('/(?:không hút thuốc|ko hút thuốc|khong hut thuoc|k hút thuốc|không thuốc)/u', $lower)) {
+        $parsed['HutThuoc'] = 0;
+        $parsed['badges'][] = 'Không hút thuốc';
+    } elseif (preg_match('/(?:hút thuốc|hut thuoc)/u', $lower)) {
+        $parsed['HutThuoc'] = 1;
+        $parsed['badges'][] = 'Có hút thuốc';
+    }
+
+    // 5. Thú cưng
+    if (preg_match('/(?:không thú cưng|ko thú cưng|không nuôi|ko nuôi)/u', $lower)) {
+        $parsed['NuoiThuCung'] = 0;
+        $parsed['badges'][] = 'Không thú cưng';
+    } elseif (preg_match('/(?:thú cưng|thu cung|nuôi mèo|nuôi chó|mèo|chó)/u', $lower)) {
+        $parsed['NuoiThuCung'] = 1;
+        $parsed['badges'][] = 'Thú cưng';
+    }
+
+    // 6. Khu vực ưu tiên
+    $khuVucList = ['đông xuyên', 'mỹ xuyên', 'mỹ long', 'mỹ bình', 'ung văn khiêm', 'võ thị sáu', 'hà hoàng hổ', 'lý thái tổ', 'khu a', 'khu b'];
+    $matchedKv = [];
+    foreach ($khuVucList as $kv) {
+        if (str_contains($lower, $kv)) {
+            $matchedKv[] = $kv;
+        }
+    }
+    if (!empty($matchedKv)) {
+        $parsed['KhuVucUuTien'] = implode(' ', $matchedKv);
+        $parsed['badges'][] = 'Khu vực: ' . implode(', ', $matchedKv);
+    }
+
+    // 7. Từ khóa bổ sung (tên, tính cách, ngành học...)
+    $clean = preg_replace('/\b(?:\d+tr\d+|\d+(?:[.,]\d+)?\s*(?:triệu|trieu|tr|k)|nữ|nu|nam|bạn|ban|gái|gai|trai|ngủ|ngu|sớm|som|thức|thuc|khuya|tự|tu|do|không|khong|ko|hút|hut|thuốc|thuoc|thú|thu|cưng|cung|nuôi|nuoi|dưới|duoi|tầm|tam|tìm|tim|muốn|muon|ở|o|ghép|ghep|gần|gan|khu|vực|vuc|với|voi|và|va|có|co|người|nguoi)\b/u', ' ', $lower);
+    foreach (preg_split('/[\s,;.\-\/]+/u', trim($clean), -1, PREG_SPLIT_NO_EMPTY) as $tok) {
+        if (mb_strlen($tok, 'UTF-8') >= 2) {
+            $parsed['keywords'][] = $tok;
+        }
+    }
+    $parsed['keywords'] = array_values(array_unique($parsed['keywords']));
+    return $parsed;
+}
+
+$moTaPhanTich = phanTichMoTaYeuCau($q);
+
+// Nếu người dùng gõ nhiều từ khóa tự do mà không phải các tiêu chí cấu trúc đã bóc tách, lọc linh hoạt theo OR
+if ($q !== '' && empty($moTaPhanTich['badges']) && !empty($moTaPhanTich['keywords'])) {
+    $orParts = [];
+    foreach ($moTaPhanTich['keywords'] as $kw) {
+        $likeKw = "%$kw%";
+        $orParts[] = "(u.HoTen LIKE ? OR h.KhuVucUuTien LIKE ? OR h.MoTaBanThan LIKE ?)";
+        $params = array_merge($params, [$likeKw, $likeKw, $likeKw]);
+        $types .= 'sss';
+    }
+    $where[] = '(' . implode(' OR ', $orParts) . ')';
 }
 
 if ($filterGioiTinh === 'Nam' || $filterGioiTinh === 'Nu' || $filterGioiTinh === 'Khac') {
@@ -196,6 +301,111 @@ if (!empty($params)) {
 }
 
 $dsHoSo = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+
+// Tính mức độ tương hợp (%) từ hồ sơ bản thân hoặc từ mô tả yêu cầu người dùng nhập
+function tinhDoTuongHop(array $toi, array $ho, array $extraKeywords = []): int {
+    $diem = 0;
+    $toiDa = 0;
+
+    // 1. Giới tính (20đ)
+    if (!empty($toi['GioiTinh'])) {
+        $toiDa += 20;
+        if ($toi['GioiTinh'] === $ho['GioiTinh']) {
+            $diem += 20;
+        } elseif ($toi['GioiTinh'] === 'Khac' || $ho['GioiTinh'] === 'Khac') {
+            $diem += 10;
+        }
+    }
+    // 2. Ngân sách tối đa (25đ)
+    if (!empty($toi['NganSachToiDa'])) {
+        $toiDa += 25;
+        $chenhLech = abs((float)$toi['NganSachToiDa'] - (float)$ho['NganSachToiDa']);
+        if ($chenhLech <= 200000) $diem += 25;
+        elseif ($chenhLech <= 400000) $diem += 18;
+        elseif ($chenhLech <= 700000) $diem += 10;
+        else $diem += 4;
+    }
+    // 3. Giờ giấc sinh hoạt (25đ)
+    if (!empty($toi['GioGiac'])) {
+        $toiDa += 25;
+        if ($toi['GioGiac'] === $ho['GioGiac']) {
+            $diem += 25;
+        } elseif ($toi['GioGiac'] === 'TuDo' || $ho['GioGiac'] === 'TuDo') {
+            $diem += 16;
+        } else {
+            $diem += 5;
+        }
+    }
+    // 4. Hút thuốc (15đ)
+    if ($toi['HutThuoc'] !== null && $toi['HutThuoc'] !== '') {
+        $toiDa += 15;
+        if ((int)$toi['HutThuoc'] === (int)$ho['HutThuoc']) $diem += 15;
+    }
+    // 5. Thú cưng (10đ)
+    if ($toi['NuoiThuCung'] !== null && $toi['NuoiThuCung'] !== '') {
+        $toiDa += 10;
+        if ((int)$toi['NuoiThuCung'] === (int)$ho['NuoiThuCung']) $diem += 10;
+        else $diem += 3;
+    }
+    // 6. Khu vực ưu tiên (10đ)
+    $kvToi = mb_strtolower((string)($toi['KhuVucUuTien'] ?? ''), 'UTF-8');
+    $kvHo  = mb_strtolower((string)($ho['KhuVucUuTien'] ?? ''), 'UTF-8');
+    if ($kvToi !== '') {
+        $toiDa += 10;
+        $khuVucKeys = ['đông xuyên', 'mỹ xuyên', 'mỹ long', 'mỹ bình', 'ung văn khiêm', 'võ thị sáu', 'hà hoàng hổ', 'lý thái tổ', 'khu a', 'khu b'];
+        foreach ($khuVucKeys as $kw) {
+            if (str_contains($kvToi, $kw) && str_contains($kvHo, $kw)) {
+                $diem += 10;
+                break;
+            }
+        }
+    }
+    // 7. Từ khóa mô tả thêm (15đ)
+    if (!empty($extraKeywords)) {
+        $toiDa += 15;
+        $haystack = mb_strtolower(($ho['HoTen'] ?? '') . ' ' . ($ho['KhuVucUuTien'] ?? '') . ' ' . ($ho['MoTaBanThan'] ?? ''), 'UTF-8');
+        $matched = 0;
+        foreach ($extraKeywords as $kw) {
+            if (str_contains($haystack, $kw)) $matched++;
+        }
+        $diem += (int)round(15 * ($matched / count($extraKeywords)));
+    }
+
+    if ($toiDa <= 0) return 75;
+    $phanTram = (int)round(($diem / $toiDa) * 100);
+    return max(25, min(100, $phanTram));
+}
+
+// Ưu tiên dùng mô tả người dùng vừa nhập; nếu không nhập thì dùng hồ sơ cá nhân đã lưu
+$coMoTaTuDo = ($q !== '' && (!empty($moTaPhanTich['badges']) || !empty($moTaPhanTich['keywords'])));
+$hoSoSoSanh = null;
+if ($coMoTaTuDo) {
+    $hoSoSoSanh = [
+        'GioiTinh'      => $moTaPhanTich['GioiTinh'] ?? ($hoSoCuaToi['GioiTinh'] ?? null),
+        'NganSachToiDa' => $moTaPhanTich['NganSachToiDa'] ?? ($hoSoCuaToi['NganSachToiDa'] ?? null),
+        'KhuVucUuTien'  => $moTaPhanTich['KhuVucUuTien'] !== '' ? $moTaPhanTich['KhuVucUuTien'] : ($hoSoCuaToi['KhuVucUuTien'] ?? ''),
+        'GioGiac'       => $moTaPhanTich['GioGiac'] ?? ($hoSoCuaToi['GioGiac'] ?? null),
+        'HutThuoc'      => $moTaPhanTich['HutThuoc'] !== null ? $moTaPhanTich['HutThuoc'] : ($hoSoCuaToi['HutThuoc'] ?? null),
+        'NuoiThuCung'   => $moTaPhanTich['NuoiThuCung'] !== null ? $moTaPhanTich['NuoiThuCung'] : ($hoSoCuaToi['NuoiThuCung'] ?? null),
+    ];
+} elseif ($hoSoCuaToi) {
+    $hoSoSoSanh = $hoSoCuaToi;
+}
+
+if ($hoSoSoSanh) {
+    foreach ($dsHoSo as &$hsItem) {
+        if ($daDangNhapSV && (int)$hsItem['MaSinhVien'] === $mand && !$coMoTaTuDo) {
+            $hsItem['match_score'] = null; // Hồ sơ của chính mình
+        } else {
+            $hsItem['match_score'] = tinhDoTuongHop($hoSoSoSanh, $hsItem, $moTaPhanTich['keywords']);
+        }
+    }
+    unset($hsItem);
+    usort($dsHoSo, function ($a, $b) {
+        return ($b['match_score'] ?? -1) <=> ($a['match_score'] ?? -1);
+    });
+}
+
 $tongHoSo = count($dsHoSo);
 
 // Tổng hồ sơ toàn hệ thống
@@ -223,12 +433,12 @@ include_once __DIR__ . '/dungchung/header.php';
     <div class="shrink-0 flex items-center gap-3">
       <?php if ($daDangNhapSV): ?>
       <button type="button" onclick="openRoommateModal()"
-              class="px-5 py-2.5 rounded-full bg-accent text-white font-semibold text-sm shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-blue-700">
+              class="px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-blue-700">
         <?= $hoSoCuaToi ? 'Chỉnh sửa tin của tôi' : '+ Đăng tin tìm bạn ghép' ?>
       </button>
       <?php elseif (!daDangNhap()): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php?tb=<?= urlencode('Vui lòng đăng nhập để đăng tin tìm bạn ở ghép.') ?>"
-         class="px-5 py-2.5 rounded-full bg-accent text-white font-semibold text-sm shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-blue-700">
+         class="px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-blue-700">
         Đăng nhập để đăng tin tìm bạn
       </a>
       <?php endif; ?>
@@ -267,11 +477,11 @@ include_once __DIR__ . '/dungchung/header.php';
   <form action="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" method="GET" class="bg-bg-sub p-4 sm:p-5 rounded-card border border-border-warm shadow-sm space-y-3">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
 
-      <!-- 1. Ô tìm kiếm từ khóa -->
+      <!-- 1. Ô mô tả yêu cầu / tìm nhiều từ khóa -->
       <div class="lg:col-span-4">
-        <label class="block text-xs font-semibold text-text-main mb-1">Tìm từ khóa</label>
+        <label class="block text-xs font-semibold text-text-main mb-1">Mô tả yêu cầu / Nhiều từ khóa</label>
         <input name="q" type="search" value="<?= htmlspecialchars($q) ?>"
-               placeholder="Tên sinh viên, khoa, thói quen, khu vực..."
+               placeholder="VD: nữ ngủ sớm không hút thuốc dưới 1.5 triệu Đông Xuyên"
                class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2 text-sm text-text-main focus:border-accent outline-none">
       </div>
 
@@ -365,6 +575,19 @@ include_once __DIR__ . '/dungchung/header.php';
       <span class="tnum">Hệ thống có <?= $kpiTong ?> bạn đang tìm người ở ghép</span>
     </div>
 
+    <?php if ($coMoTaTuDo): ?>
+    <div class="p-3.5 rounded-card bg-status-green-bg/50 border border-accent/30 flex flex-wrap items-center gap-2 text-xs">
+      <span class="font-bold text-accent">Đã phân tích yêu cầu của bạn:</span>
+      <?php foreach ($moTaPhanTich['badges'] as $bd): ?>
+        <span class="px-2.5 py-0.5 rounded-full bg-white border border-accent/30 text-text-main font-medium"><?= htmlspecialchars($bd) ?></span>
+      <?php endforeach; ?>
+      <?php foreach ($moTaPhanTich['keywords'] as $kw): ?>
+        <span class="px-2.5 py-0.5 rounded-full bg-white border border-border-warm text-text-sub">Từ khóa: <?= htmlspecialchars($kw) ?></span>
+      <?php endforeach; ?>
+      <span class="ml-auto text-[11px] text-text-sub font-medium">Đang xếp theo mức độ hợp cao nhất</span>
+    </div>
+    <?php endif; ?>
+
     <?php if (empty($dsHoSo)): ?>
     <!-- EMPTY STATE KHI CHƯA CÓ AI ĐĂNG / KHÔNG TÌM THẤY -->
     <div class="py-16 text-center space-y-4 bg-bg-main rounded-card border border-border-warm border-dashed">
@@ -388,79 +611,111 @@ include_once __DIR__ . '/dungchung/header.php';
     </div>
 
     <?php else: ?>
-    <!-- GRID THẺ BẠN GHÉP THỰC TỪ DATABASE -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <!-- GRID THẺ BẠN GHÉP PHONG CÁCH DATING APP -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <?php foreach ($dsHoSo as $hs):
         $ns = number_format($hs['NganSachToiDa'], 0, ',', '.');
         $sdt = $hs['SoDienThoai'] ?? '';
         $ngay = date('d/m/Y', strtotime($hs['NgayTao']));
         $gioGiacText = ($hs['GioGiac'] === 'Som') ? 'Ngủ sớm (< 23h)' : (($hs['GioGiac'] === 'Khuya') ? 'Hay thức khuya' : 'Giờ giấc tự do');
-        $gioGiacBadge = ($hs['GioGiac'] === 'Som') ? 'bg-status-green-bg text-accent' : 'bg-bg-sub text-text-sub';
+        $gioiTinhLabel = ($hs['GioiTinh'] === 'Nam') ? 'Nam' : (($hs['GioiTinh'] === 'Nu') ? 'Nữ' : 'Khác');
+        $avatarUrl = $hs['AnhDaiDien'] ?: '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/default-avatar.png';
+        $matchScore = $hs['match_score'] ?? null;
+        $isCuaToi = ($daDangNhapSV && (int)$hs['MaSinhVien'] === $mand);
+        $matchClass = 'bg-slate-800/90 text-white';
+        if ($matchScore !== null) {
+          $matchClass = $matchScore >= 80 ? 'bg-emerald-600 text-white' : ($matchScore >= 60 ? 'bg-accent text-white' : 'bg-amber-500 text-white');
+        }
       ?>
-      <article class="bg-bg-main rounded-card border border-border-warm p-5 space-y-3.5 card-hover flex flex-col justify-between">
-        <div class="space-y-3">
-          <!-- Thông tin cá nhân -->
-          <div class="flex items-start gap-3">
-            <div class="w-12 h-12 rounded-full overflow-hidden bg-bg-sub border border-border-warm shrink-0">
-              <?php if ($hs['AnhDaiDien']): ?>
-              <img src="<?= htmlspecialchars($hs['AnhDaiDien']) ?>" alt="<?= htmlspecialchars($hs['HoTen']) ?>" class="w-full h-full object-cover">
+      <article class="group bg-bg-main rounded-2xl border border-border-warm overflow-hidden card-hover flex flex-col justify-between shadow-sm">
+        <div>
+          <!-- Ảnh chân dung lớn kiểu dating app -->
+          <div class="relative aspect-[4/5] w-full overflow-hidden bg-slate-100">
+            <img src="<?= htmlspecialchars($avatarUrl) ?>"
+                 alt="<?= htmlspecialchars($hs['HoTen']) ?>"
+                 onerror="this.src='/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/default-avatar.png'"
+                 class="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105">
+
+            <!-- Gradient tối dưới chân ảnh để nổi chữ -->
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/20 to-transparent"></div>
+
+            <!-- Badge trên cùng -->
+            <div class="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+              <?php if ($isCuaToi): ?>
+              <span class="px-2.5 py-1 rounded-full bg-slate-900/85 backdrop-blur-sm text-white text-[11px] font-bold shadow-sm">
+                Hồ sơ của bạn
+              </span>
+              <?php elseif ($matchScore !== null): ?>
+              <span class="px-3 py-1 rounded-full <?= $matchClass ?> text-[11px] font-bold shadow-sm tnum">
+                Hợp <?= $matchScore ?>%
+              </span>
               <?php else: ?>
-              <div class="w-full h-full flex items-center justify-center">
-                <span class="material-symbols-outlined text-text-sub text-2xl">person</span>
-              </div>
+              <span class="px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-text-main text-[11px] font-semibold shadow-sm">
+                <?= $gioGiacText ?>
+              </span>
               <?php endif; ?>
+              <span class="px-2.5 py-1 rounded-full bg-accent text-white text-[11px] font-bold shadow-sm tnum">
+                <?= $ns ?> đ/tháng
+              </span>
             </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-sm font-bold text-text-main truncate"><?= htmlspecialchars($hs['HoTen']) ?></h3>
-              <p class="text-xs text-text-sub">
-                Giới tính: <strong><?= $hs['GioiTinh'] ?></strong> · <span class="tnum"><?= $ngay ?></span>
+
+            <!-- Tên & khu vực nổi trên ảnh -->
+            <div class="absolute bottom-3.5 left-4 right-4 text-white">
+              <div class="flex items-baseline gap-2">
+                <h3 class="text-lg font-bold leading-tight truncate"><?= htmlspecialchars($hs['HoTen']) ?></h3>
+                <span class="text-xs font-medium text-white/85 shrink-0"><?= $gioiTinhLabel ?></span>
+              </div>
+              <p class="text-xs text-white/85 mt-1 truncate">
+                <?= htmlspecialchars($hs['KhuVucUuTien'] ?: 'Quanh ĐH An Giang') ?>
               </p>
             </div>
           </div>
 
-          <!-- Tags thói quen -->
-          <div class="flex flex-wrap gap-1.5 text-[11px]">
-            <span class="px-2 py-0.5 rounded-full <?= $gioGiacBadge ?> font-semibold"><?= $gioGiacText ?></span>
-            <?php if (!$hs['HutThuoc']): ?>
-            <span class="px-2 py-0.5 rounded-full bg-bg-sub text-text-sub">🚭 Không hút thuốc</span>
-            <?php else: ?>
-            <span class="px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text">🚬 Có hút thuốc</span>
+          <!-- Nội dung chi tiết & tags -->
+          <div class="p-4 space-y-3">
+            <?php if ($matchScore !== null): ?>
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-semibold text-text-sub">Mức độ phù hợp với bạn</span>
+                <span class="font-bold text-text-main tnum"><?= $matchScore ?>%</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div class="h-full rounded-full <?= $matchScore >= 80 ? 'bg-emerald-500' : ($matchScore >= 60 ? 'bg-accent' : 'bg-amber-500') ?>" style="width: <?= $matchScore ?>%"></div>
+              </div>
+            </div>
             <?php endif; ?>
 
-            <?php if ($hs['NuoiThuCung']): ?>
-            <span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent">🐾 Nuôi thú cưng</span>
-            <?php else: ?>
-            <span class="px-2 py-0.5 rounded-full bg-bg-sub text-text-sub">Không thú cưng</span>
+            <div class="flex flex-wrap gap-1.5 text-[11px]">
+              <span class="px-2.5 py-0.5 rounded-full bg-bg-sub border border-border-warm text-text-sub font-medium">
+                <?= $gioGiacText ?>
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full bg-bg-sub border border-border-warm text-text-sub font-medium">
+                <?= !$hs['HutThuoc'] ? 'Không hút thuốc' : 'Có hút thuốc' ?>
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full bg-bg-sub border border-border-warm text-text-sub font-medium">
+                <?= $hs['NuoiThuCung'] ? 'Có nuôi thú cưng' : 'Không thú cưng' ?>
+              </span>
+            </div>
+
+            <?php if ($hs['MoTaBanThan']): ?>
+            <p class="text-xs text-text-main leading-relaxed line-clamp-2 min-h-[2.5rem]">
+              <?= htmlspecialchars($hs['MoTaBanThan']) ?>
+            </p>
             <?php endif; ?>
           </div>
-
-          <!-- Mô tả bản thân -->
-          <?php if ($hs['MoTaBanThan']): ?>
-          <p class="text-xs text-text-main leading-relaxed bg-bg-sub/60 p-3 rounded-card">
-            <?= nl2br(htmlspecialchars($hs['MoTaBanThan'])) ?>
-          </p>
-          <?php endif; ?>
         </div>
 
-        <div class="pt-3 border-t border-border-warm space-y-2.5">
-          <div class="flex items-center justify-between text-xs tnum">
-            <span class="text-text-sub">Ngân sách: <strong class="text-text-main text-sm font-bold"><?= $ns ?> đ</strong></span>
-            <span class="text-text-sub truncate max-w-[140px]" title="<?= htmlspecialchars($hs['KhuVucUuTien'] ?: 'Không cố định') ?>">
-              📍 <?= htmlspecialchars($hs['KhuVucUuTien'] ?: 'Quanh AGU') ?>
-            </span>
-          </div>
-
-          <!-- Nút liên hệ -->
+        <!-- Nút liên hệ -->
+        <div class="px-4 pb-4 pt-1">
           <?php if ($sdt): ?>
           <a href="tel:<?= htmlspecialchars($sdt) ?>"
-             class="w-full py-2 rounded-btn bg-accent text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98]">
+             class="w-full py-2.5 rounded-btn bg-accent text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-all duration-200 hover:opacity-95 active:scale-[0.98]">
             <span class="material-symbols-outlined text-[16px]">call</span>
             <span>Liên hệ: <?= htmlspecialchars($sdt) ?></span>
           </a>
           <?php else: ?>
           <a href="mailto:<?= htmlspecialchars($hs['Email']) ?>"
-             class="w-full py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs flex items-center justify-center gap-1.5 card-hover">
-            <span class="material-symbols-outlined text-[16px]">mail</span>
+             class="w-full py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs flex items-center justify-center gap-1.5 card-hover">
             <span>Gửi email trao đổi</span>
           </a>
           <?php endif; ?>

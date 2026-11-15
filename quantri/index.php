@@ -11,11 +11,11 @@ if (!daDangNhap()) {
 
 $nd = nguoiDungHienTai();
 $nd_hoten = $nd['hoten'] ?? 'Admin';
-$nd_anh   = $nd['anhdaidien'] ?? '/DoAn_TimNhaTroSV_QLDAPM/assets/images/default-avatar.png';
+$nd_anh   = $nd['anhdaidien'] ?? '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/default-avatar.png';
 $csrfToken = taoCsrfToken();
 
 // Hàm chuẩn hóa đường dẫn ảnh hiển thị từ thư mục /quantri/
-function chuanHoaAnh(?string $path, string $macDinh = '/DoAn_TimNhaTroSV_QLDAPM/assets/images/default-avatar.png'): string
+function chuanHoaAnh(?string $path, string $macDinh = '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/default-avatar.png'): string
 {
     if (empty($path)) {
         return $macDinh;
@@ -39,18 +39,61 @@ if (($nd['vaitro'] ?? '') !== 'QuanTriVien') {
     exit();
 }
 
-// XỬ LÝ HÀNH ĐỘNG POST KIỂM DUYỆT TIN TRỌ
+// XUẤT BÁO CÁO CSV (MỞ ĐƯỢC TRỰC TIẾP BẰNG EXCEL UTF-8)
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $filename = 'baocao_campusnest_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    echo "\xEF\xBB\xBF"; // UTF-8 BOM cho Excel
+    $out = fopen('php://output', 'w');
+
+    fputcsv($out, ['BAO CAO THONG KE HE THONG CAMPUSNEST AGU', date('d/m/Y H:i')]);
+    fputcsv($out, ['Ma phong', 'Ten phong', 'Nha tro', 'Dia chi', 'Chu tro', 'Gia thue (VND)', 'Dien tich (m2)', 'Trang thai', 'Kiem duyet', 'Ngay dang']);
+
+    $resCsv = $conn->query("
+        SELECT p.MaPhong, p.TenPhong, n.TenNhaTro, n.DiaChi, u.HoTen AS TenChuTro,
+               p.GiaThue, p.DienTich, p.TrangThai, p.TrangThaiDuyet, p.NgayDang
+        FROM PhongTro p
+        JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro
+        JOIN NguoiDung u ON n.MaChuTro = u.MaNguoiDung
+        ORDER BY p.NgayDang DESC
+    ");
+    if ($resCsv) {
+        while ($row = $resCsv->fetch_assoc()) {
+            fputcsv($out, [
+                $row['MaPhong'],
+                $row['TenPhong'],
+                $row['TenNhaTro'],
+                $row['DiaChi'],
+                $row['TenChuTro'],
+                number_format((float)$row['GiaThue'], 0, '', ''),
+                $row['DienTich'],
+                $row['TrangThai'],
+                $row['TrangThaiDuyet'],
+                $row['NgayDang'],
+            ]);
+        }
+    }
+    fclose($out);
+    exit();
+}
+
+// XỬ LÝ HÀNH ĐỘNG POST KIỂM DUYỆT TIN TRỌ & QUẢN LÝ GHÉP BẠN
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $hanhDong = $_POST['hanh_dong'] ?? '';
+    $isGhepBanAction = in_array($hanhDong, ['an_ghepban', 'mo_ghepban', 'xoa_ghepban'], true);
+    $redirectTab = $isGhepBanAction ? 'roommates' : 'moderation';
+
     if (!kiemTraCsrfToken($_POST['csrf_token'] ?? '')) {
         datThongBao('danger', 'Phiên làm việc không hợp lệ (lỗi CSRF). Vui lòng thử lại.');
-        header('Location: /DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=moderation');
+        header('Location: /DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=' . $redirectTab);
         exit();
     }
 
-    $hanhDong = $_POST['hanh_dong'] ?? '';
     $id = (int)($_POST['ma_phong'] ?? 0);
+    $maHoSo = (int)($_POST['ma_hoso'] ?? 0);
 
-    if ($id > 0) {
+    if ($id > 0 && !$isGhepBanAction) {
         if ($hanhDong === 'duyet_tin') {
             $stmt = $conn->prepare("UPDATE PhongTro SET TrangThaiDuyet = 'DaDuyet' WHERE MaPhong = ?");
             $stmt->bind_param('i', $id);
@@ -67,9 +110,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
             datThongBao('info', "Đã xóa tin phòng trọ #$id khỏi hệ thống.");
         }
+    } elseif ($maHoSo > 0 && $isGhepBanAction) {
+        if ($hanhDong === 'an_ghepban') {
+            $stmt = $conn->prepare("UPDATE HoSoGhepPhong SET TrangThai = 'DaTimDuoc' WHERE MaHoSo = ?");
+            $stmt->bind_param('i', $maHoSo);
+            $stmt->execute();
+            datThongBao('warning', "Đã ẩn hồ sơ ghép bạn #$maHoSo.");
+        } elseif ($hanhDong === 'mo_ghepban') {
+            $stmt = $conn->prepare("UPDATE HoSoGhepPhong SET TrangThai = 'DangTim' WHERE MaHoSo = ?");
+            $stmt->bind_param('i', $maHoSo);
+            $stmt->execute();
+            datThongBao('success', "Đã mở hiển thị lại hồ sơ ghép bạn #$maHoSo.");
+        } elseif ($hanhDong === 'xoa_ghepban') {
+            $stmt = $conn->prepare("DELETE FROM HoSoGhepPhong WHERE MaHoSo = ?");
+            $stmt->bind_param('i', $maHoSo);
+            $stmt->execute();
+            datThongBao('info', "Đã xóa hồ sơ ghép bạn #$maHoSo khỏi hệ thống.");
+        }
     }
 
-    header('Location: /DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=moderation');
+    header('Location: /DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=' . $redirectTab);
     exit();
 }
 
@@ -178,6 +238,15 @@ $resBc = $conn->query("
 ");
 $dsBaoCao = $resBc ? $resBc->fetch_all(MYSQLI_ASSOC) : [];
 
+// Danh sách hồ sơ ghép bạn
+$resGb = $conn->query("
+    SELECT h.*, u.HoTen, u.Email, u.SoDienThoai, u.AnhDaiDien
+    FROM HoSoGhepPhong h
+    JOIN NguoiDung u ON h.MaSinhVien = u.MaNguoiDung
+    ORDER BY h.NgayTao DESC
+");
+$dsGhepBan = $resGb ? $resGb->fetch_all(MYSQLI_ASSOC) : [];
+
 $activeTab = $_GET['tab'] ?? 'dashboard';
 $flashMsg = layThongBao();
 
@@ -235,6 +304,10 @@ include_once __DIR__ . '/../dungchung/header.php';
           <span class="material-symbols-outlined">manage_accounts</span><span>Quản lý tài khoản</span>
           <span class="ml-auto px-1.5 py-0.5 rounded-full bg-bg-main text-text-sub text-[10px] font-bold tnum hidden lg:inline"><?= count($dsUsers) ?></span>
         </button>
+        <button id="admin-menu-roommates" onclick="switchAdminTab('roommates')" class="admin-menu-item <?= $activeTab==='roommates'?'active':'' ?> flex items-center gap-2 shrink-0 px-3 py-2 rounded-btn text-xs font-semibold transition-all duration-200 active:scale-[0.98]">
+          <span class="material-symbols-outlined">group</span><span>Bài ghép bạn</span>
+          <span class="ml-auto px-1.5 py-0.5 rounded-full bg-bg-main text-text-sub text-[10px] font-bold tnum hidden lg:inline"><?= count($dsGhepBan) ?></span>
+        </button>
         <a href="/DoAn_TimNhaTroSV_QLDAPM/quantri/quanly_tienich.php" class="admin-menu-item flex items-center gap-2 shrink-0 px-3 py-2 rounded-btn text-xs font-semibold transition-all duration-200 hover:bg-bg-main">
           <span class="material-symbols-outlined">category</span><span>Tiện ích & Nhãn</span>
         </a>
@@ -259,6 +332,23 @@ include_once __DIR__ . '/../dungchung/header.php';
 
       <!-- TAB 1: TỔNG QUAN & BIỂU ĐỒ THỐNG KÊ -->
       <section id="admin-section-dashboard" class="space-y-5 <?= $activeTab!=='dashboard'?'hidden':'' ?>">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 class="text-lg font-bold text-text-main">Tổng quan hệ thống</h1>
+            <p class="text-xs text-text-sub">Số liệu thống kê phòng trọ, tài khoản và báo cáo theo thời gian thực</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?export=csv"
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-btn bg-accent text-white font-semibold text-xs hover:opacity-90 transition-opacity">
+              <span class="material-symbols-outlined text-[16px]">download</span>Xuất báo cáo CSV
+            </a>
+            <button type="button" onclick="window.print()"
+                    class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover">
+              <span class="material-symbols-outlined text-[16px]">print</span>In thống kê
+            </button>
+          </div>
+        </div>
+
         <div class="bg-bg-sub rounded-card border border-border-warm p-4">
           <div class="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border-warm tnum">
             <div class="pb-3 lg:pb-0 lg:pr-6">
@@ -849,6 +939,94 @@ include_once __DIR__ . '/../dungchung/header.php';
           </div>
         </div>
       </section>
+
+      <!-- TAB 5: QUẢN LÝ BÀI ĐĂNG GHÉP BẠN -->
+      <section id="admin-section-roommates" class="space-y-5 <?= $activeTab!=='roommates'?'hidden':'' ?>">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-bold text-text-main">Quản lý bài đăng ghép bạn</h1>
+            <p class="text-xs text-text-sub">Kiểm duyệt nội dung, ẩn hoặc xóa các hồ sơ tìm bạn ở ghép vi phạm</p>
+          </div>
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" target="_blank"
+             class="px-3.5 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover self-start">
+            Xem trang Ghép bạn →
+          </a>
+        </div>
+
+        <div class="bg-bg-main rounded-card border border-border-warm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-bg-sub text-[11px] font-bold uppercase tracking-wider text-text-sub">
+                <tr>
+                  <th class="py-3 px-4">Sinh viên</th>
+                  <th class="py-3 px-4">Giới tính &amp; Giờ giấc</th>
+                  <th class="py-3 px-4 tnum">Ngân sách</th>
+                  <th class="py-3 px-4">Khu vực &amp; Mô tả</th>
+                  <th class="py-3 px-4">Trạng thái</th>
+                  <th class="py-3 px-4 text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+              <?php if (empty($dsGhepBan)): ?>
+                <tr><td colspan="6" class="py-10 text-center text-xs text-text-sub">Chưa có hồ sơ ghép bạn nào.</td></tr>
+              <?php else: foreach ($dsGhepBan as $gb):
+                $dangTim = $gb['TrangThai'] === 'DangTim';
+              ?>
+                <tr class="border-t border-border-warm hover:bg-bg-sub/40">
+                  <td class="py-3 px-4">
+                    <div class="flex items-center gap-2.5">
+                      <img src="<?= htmlspecialchars(chuanHoaAnh($gb['AnhDaiDien'])) ?>" alt="Avatar"
+                           class="w-8 h-8 rounded-full object-cover border border-border-warm shrink-0">
+                      <div>
+                        <p class="font-semibold text-text-main text-xs"><?= htmlspecialchars($gb['HoTen']) ?></p>
+                        <p class="text-[11px] text-text-sub"><?= htmlspecialchars($gb['Email']) ?></p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-xs text-text-main">
+                    <?= $gb['GioiTinh'] === 'Nam' ? 'Nam' : ($gb['GioiTinh'] === 'Nu' ? 'Nữ' : 'Khác') ?> · <?= htmlspecialchars($gb['GioGiac']) ?>
+                  </td>
+                  <td class="py-3 px-4 text-xs font-semibold text-text-main tnum">
+                    <?= number_format((float)$gb['NganSachToiDa'], 0, ',', '.') ?> đ
+                  </td>
+                  <td class="py-3 px-4 text-xs max-w-xs">
+                    <p class="font-medium text-text-main truncate"><?= htmlspecialchars($gb['KhuVucUuTien'] ?: 'Quanh AGU') ?></p>
+                    <p class="text-[11px] text-text-sub line-clamp-2"><?= htmlspecialchars($gb['MoTaBanThan'] ?? '') ?></p>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold <?= $dangTim ? 'bg-status-green-bg text-accent' : 'bg-bg-sub text-text-sub' ?>">
+                      <?= $dangTim ? 'Đang tìm' : 'Đã ẩn' ?>
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <form method="POST" class="inline">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="ma_hoso" value="<?= $gb['MaHoSo'] ?>">
+                        <input type="hidden" name="hanh_dong" value="<?= $dangTim ? 'an_ghepban' : 'mo_ghepban' ?>">
+                        <button type="submit" title="<?= $dangTim ? 'Ẩn bài đăng' : 'Mở hiển thị' ?>"
+                                class="px-2.5 py-1 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover">
+                          <?= $dangTim ? 'Ẩn' : 'Mở lại' ?>
+                        </button>
+                      </form>
+                      <form method="POST" class="inline" onsubmit="return confirm('Xóa vĩnh viễn hồ sơ ghép bạn này?')">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="ma_hoso" value="<?= $gb['MaHoSo'] ?>">
+                        <input type="hidden" name="hanh_dong" value="xoa_ghepban">
+                        <button type="submit" title="Xóa hồ sơ"
+                                class="w-7 h-7 rounded-btn border border-status-red-border bg-status-red-bg text-status-red-text flex items-center justify-center">
+                          <span class="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <?php endforeach; endif; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 </div>
@@ -857,7 +1035,7 @@ include_once __DIR__ . '/../dungchung/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   function switchAdminTab(tab) {
-    const tabs = ['dashboard', 'moderation', 'fraud', 'users'];
+    const tabs = ['dashboard', 'moderation', 'fraud', 'users', 'roommates'];
     tabs.forEach(t => {
       const section = document.getElementById('admin-section-' + t);
       const menu = document.getElementById('admin-menu-' + t);
@@ -933,7 +1111,7 @@ include_once __DIR__ . '/../dungchung/header.php';
           datasets: [{
             label: 'Số phòng mới',
             data: <?= json_encode($dataPhongThang) ?>,
-            backgroundColor: '#16a34a',
+            backgroundColor: '#2563EB',
             borderRadius: 6
           }]
         },
@@ -978,7 +1156,7 @@ include_once __DIR__ . '/../dungchung/header.php';
           labels: ['Còn phòng', 'Đã thuê', 'Đang bảo trì'],
           datasets: [{
             data: [<?= $phongConTrong ?>, <?= $phongDaThue ?>, <?= $phongBaoTri ?>],
-            backgroundColor: ['#16a34a', '#f59e0b', '#94a3b8']
+            backgroundColor: ['#2563EB', '#f59e0b', '#94a3b8']
           }]
         },
         options: {
