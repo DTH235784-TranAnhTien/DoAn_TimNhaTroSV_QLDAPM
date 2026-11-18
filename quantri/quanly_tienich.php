@@ -147,7 +147,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // [COMMIT_2_PHP_HANDLER]
+    // 5. Quét & gắn nhãn tự động cho toàn bộ phòng trọ (PhongTro_Nhan)
+    if ($hanhDong === 'quet_gan_nhan') {
+        $resAllNhan = $conn->query("SELECT MaNhan, TuKhoaNhanDien FROM NhanDanhMuc WHERE TuKhoaNhanDien IS NOT NULL AND TRIM(TuKhoaNhanDien) != ''");
+        $resAllPhong = $conn->query("SELECT MaPhong, TenPhong, MoTa FROM PhongTro");
+
+        $dsNhanQuet = $resAllNhan ? $resAllNhan->fetch_all(MYSQLI_ASSOC) : [];
+        $dsPhongQuet = $resAllPhong ? $resAllPhong->fetch_all(MYSQLI_ASSOC) : [];
+
+        if (empty($dsNhanQuet) || empty($dsPhongQuet)) {
+            datThongBao('warning', 'Chưa có đủ dữ liệu nhãn từ khóa hoặc phòng trọ để quét tự động.');
+            header("Location: $redirectUrl");
+            exit();
+        }
+
+        $stmtGan = $conn->prepare("INSERT IGNORE INTO PhongTro_Nhan (MaPhong, MaNhan) VALUES (?, ?)");
+        $soTagMoi = 0;
+
+        foreach ($dsNhanQuet as $nhanItem) {
+            $maNhanItem = (int)$nhanItem['MaNhan'];
+            $dsTuKhoa = array_filter(array_map('trim', preg_split('/[,;|]+/', $nhanItem['TuKhoaNhanDien'])));
+            if (empty($dsTuKhoa)) {
+                continue;
+            }
+
+            foreach ($dsPhongQuet as $phongItem) {
+                $maPhongItem = (int)$phongItem['MaPhong'];
+                $vanBan = ($phongItem['TenPhong'] ?? '') . ' ' . ($phongItem['MoTa'] ?? '');
+
+                foreach ($dsTuKhoa as $kw) {
+                    if ($kw !== '' && mb_stripos($vanBan, $kw, 0, 'UTF-8') !== false) {
+                        $stmtGan->bind_param('ii', $maPhongItem, $maNhanItem);
+                        $stmtGan->execute();
+                        if ($stmtGan->affected_rows > 0) {
+                            $soTagMoi++;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        datThongBao('success', "Hoàn tất quét từ khóa: đã tự động gắn thêm $soTagMoi lượt nhãn cho các phòng trọ phù hợp!");
+        header("Location: $redirectUrl");
+        exit();
+    }
 }
 
 // ================= TRUY VẤN DANH SÁCH TIỆN ÍCH & NHÃN DANH MỤC =================
@@ -327,7 +371,13 @@ include_once __DIR__ . '/../dungchung/header.php';
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <span class="px-2.5 py-1 rounded-full bg-bg-main border border-border-warm text-xs font-semibold text-text-main tnum"><?= count($dsNhan) ?> nhãn</span>
-            <!-- [COMMIT_2_HTML_BUTTON] -->
+            <form method="POST" class="inline" onsubmit="return confirm('Hệ thống sẽ quét toàn bộ phòng trọ hiện có và tự động gắn nhãn khớp từ khóa. Tiếp tục?')">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+              <input type="hidden" name="hanh_dong" value="quet_gan_nhan">
+              <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover">
+                <span class="material-symbols-outlined text-[16px] text-accent">auto_fix_high</span>Quét gắn nhãn tự động
+              </button>
+            </form>
             <button type="button" onclick="openNhanModal()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-btn bg-accent text-white font-semibold text-xs transition-all duration-200 active:scale-[0.98]">
               <span class="material-symbols-outlined text-[16px]">new_label</span>Thêm nhãn
             </button>
