@@ -137,7 +137,8 @@ $sql = "
     SELECT p.MaPhong, p.TenPhong, p.GiaThue, p.DienTich, p.TrangThai, p.NgayDang, p.MoTa,
            n.TenNhaTro, n.DiaChi, n.ViDo, n.KinhDo,
            u.HoTen AS TenChuTro, u.SoDienThoai,
-           (SELECT h.DuongDan FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.LaAnhChinh = 1 LIMIT 1) AS AnhChinh
+           (SELECT h.DuongDan FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.LaAnhChinh = 1 LIMIT 1) AS AnhChinh,
+           (SELECT GROUP_CONCAT(ti.TenTienIch SEPARATOR ', ') FROM PhongTro_TienIch pt JOIN TienIch ti ON pt.MaTienIch = ti.MaTienIch WHERE pt.MaPhong = p.MaPhong) AS DsTienIch
     FROM PhongTro p
     JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro
     JOIN NguoiDung u ON n.MaChuTro = u.MaNguoiDung
@@ -155,6 +156,40 @@ if (!empty($params)) {
 }
 
 $dsPhong = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+
+// Xếp hạng & lọc thông minh khi nhập nhiều từ khóa (ưu tiên phòng khớp đủ tất cả từ khóa)
+if (!empty($tuKhoaList) && !empty($dsPhong)) {
+    $totalKw = count($tuKhoaList);
+    $exactMatches = [];
+    foreach ($dsPhong as &$pItem) {
+        $hay = mb_strtolower(
+            ($pItem['TenPhong'] ?? '') . ' ' .
+            ($pItem['TenNhaTro'] ?? '') . ' ' .
+            ($pItem['DiaChi'] ?? '') . ' ' .
+            ($pItem['MoTa'] ?? '') . ' ' .
+            ($pItem['DsTienIch'] ?? ''),
+            'UTF-8'
+        );
+        $matched = 0;
+        foreach ($tuKhoaList as $kw) {
+            if (str_contains($hay, $kw)) $matched++;
+        }
+        $pItem['_kw_match'] = $matched;
+        if ($matched === $totalKw) {
+            $exactMatches[] = $pItem;
+        }
+    }
+    unset($pItem);
+
+    if (!empty($exactMatches) && $totalKw >= 2) {
+        $dsPhong = $exactMatches;
+    } else {
+        usort($dsPhong, function ($a, $b) {
+            return ($b['_kw_match'] ?? 0) <=> ($a['_kw_match'] ?? 0);
+        });
+    }
+}
+
 $tongPhong = count($dsPhong);
 
 // Phân trang danh sách phòng (Thành viên 4)

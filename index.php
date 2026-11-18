@@ -53,10 +53,10 @@ include_once __DIR__ . '/dungchung/header.php';
         <div class="md:col-span-4">
           <label class="block text-xs font-semibold text-text-main mb-1">Cơ sở học tập</label>
           <select name="coso" class="w-full bg-bg-sub border border-border-warm rounded-btn px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
-            <option value="khu-a">Khu A — 18 Ung Văn Khiêm (P. Đông Xuyên)</option>
-            <option value="khu-b">Khu B — 25 Võ Thị Sáu (P. Mỹ Xuyên)</option>
-            <option value="ktx">Ký túc xá AGU (Đông Xuyên)</option>
-            <option value="dinh-my">Cơ sở Định Mỹ (Thoại Sơn)</option>
+            <option value="">Tất cả khu vực</option>
+            <option value="Dong Xuyen">Đông Xuyên — Gần ĐH An Giang</option>
+            <option value="My Xuyen">Mỹ Xuyên — Trung tâm</option>
+            <option value="ktx">Ký túc xá / Đông Xuyên</option>
           </select>
         </div>
         <div class="md:col-span-4">

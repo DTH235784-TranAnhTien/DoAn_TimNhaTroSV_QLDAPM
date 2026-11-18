@@ -117,7 +117,9 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
     <nav class="hidden xl:flex items-center gap-0.5 shrink-0">
       <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? 'home') === 'home' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Trang chủ</a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'explore' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Tìm phòng</a>
+      <?php if (!$laChuTro): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'roommate' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Ghép bạn</a>
+      <?php endif; ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'guide' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Cẩm nang</a>
       <?php if ($laChuTro || $laAdmin): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'landlord' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Chủ trọ</a>
@@ -271,7 +273,9 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
     <div class="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center gap-1.5 overflow-x-auto py-2">
       <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? 'home') === 'home' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Trang chủ</a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'explore' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Bản đồ &amp; Toàn bộ trọ</a>
+      <?php if (!$laChuTro): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'roommate' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Ghép bạn cùng phòng (AI)</a>
+      <?php endif; ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'guide' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Cẩm nang &amp; Review</a>
       <?php if ($laChuTro || $laAdmin): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'landlord' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Quản lý Chủ trọ</a>
