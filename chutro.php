@@ -4,9 +4,15 @@ $trangHienTai = 'landlord';
 require_once __DIR__ . '/cauhinh/database.php';
 require_once __DIR__ . '/cauhinh/auth.php';
 
+// Xác định đường dẫn gốc linh hoạt
+$base_url = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
+if ($base_url === '' || $base_url === '/') {
+    $base_url = strpos($_SERVER['REQUEST_URI'], '/QLNhaTro') !== false ? '/QLNhaTro' : '/DoAn_TimNhaTroSV_QLDAPM';
+}
+
 // Phan quyen: chi ChuTro & Admin moi vao duoc
 if (!daDangNhap()) {
-    header('Location: /DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php');
+    header("Location: {$base_url}/taikhoan/dangnhap.php");
     exit();
 }
 $nd   = nguoiDungHienTai();
@@ -14,7 +20,7 @@ $mand = (int)$nd['mannd'];
 $vaitro = $nd['vaitro'] ?? '';
 
 if (!in_array($vaitro, ['ChuTro', 'QuanTriVien'])) {
-    header('Location: /DoAn_TimNhaTroSV_QLDAPM/index.php');
+    header("Location: {$base_url}/index.php");
     exit();
 }
 
@@ -102,18 +108,18 @@ include_once __DIR__ . '/dungchung/header.php';
 
   <!-- Action buttons -->
   <div class="flex flex-wrap gap-3">
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/dangtin.php"
+    <a href="<?= $base_url ?>/chutro/dangtin.php"
        class="flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm transition-all duration-200 hover:opacity-90">
-      <span class="material-symbols-outlined text-base">post_add</span>Dang tin phong moi
+      <span class="material-symbols-outlined text-base">post_add</span>Đăng tin phòng mới
     </a>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/duyetlichhen.php"
+    <a href="<?= $base_url ?>/chutro/duyetlichhen.php"
        class="flex items-center gap-2 px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
-      <span class="material-symbols-outlined text-base">calendar_check</span>Duyet lich hen
+      <span class="material-symbols-outlined text-base">calendar_check</span>Duyệt lịch hẹn
       <?php if ($dsLichHen): ?><span class="ml-1 px-1.5 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-[10px] font-bold"><?= count($dsLichHen) ?></span><?php endif; ?>
     </a>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/danhsachphong.php"
+    <a href="<?= $base_url ?>/chutro/danhsachphong.php"
        class="flex items-center gap-2 px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
-      <span class="material-symbols-outlined text-base">apartment</span>Quan ly phong
+      <span class="material-symbols-outlined text-base">apartment</span>Quản lý phòng
     </a>
   </div>
 
@@ -121,11 +127,11 @@ include_once __DIR__ . '/dungchung/header.php';
   <!-- EMPTY STATE -->
   <div class="py-20 text-center space-y-4 bg-bg-main rounded-card border border-border-warm border-dashed">
     <span class="material-symbols-outlined text-5xl text-text-sub block mx-auto">apartment</span>
-    <p class="text-base font-bold text-text-main">Chua co phong tro nao</p>
-    <p class="text-xs text-text-sub">Hay dang tin phong tro de sinh vien tim kiem.</p>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/dangtin.php"
+    <p class="text-base font-bold text-text-main">Chưa có phòng trọ nào</p>
+    <p class="text-xs text-text-sub">Hãy đăng tin phòng trọ để sinh viên tìm kiếm.</p>
+    <a href="<?= $base_url ?>/chutro/dangtin.php"
        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm">
-      <span class="material-symbols-outlined text-base">post_add</span>Dang tin ngay
+      <span class="material-symbols-outlined text-base">post_add</span>Đăng tin ngay
     </a>
   </div>
 
@@ -169,10 +175,16 @@ include_once __DIR__ . '/dungchung/header.php';
             <td class="py-2.5 px-4"><?= $ttBadge ?></td>
             <td class="py-2.5 px-4"><?= $duyetBadge ?></td>
             <td class="py-2.5 px-4 text-right">
-              <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=<?= $p['MaPhong'] ?>"
-                 class="px-3 py-1 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover">
-                Xem
-              </a>
+              <div class="flex items-center justify-end gap-1.5">
+                <a href="<?= $base_url ?>/chitiet.php?id=<?= $p['MaPhong'] ?>"
+                   class="px-2.5 py-1 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover">
+                  Xem
+                </a>
+                <a href="<?= $base_url ?>/chutro/danhsachphong.php"
+                   class="px-2.5 py-1 rounded-btn bg-accent text-white font-semibold text-xs hover:opacity-90">
+                  Quản lý
+                </a>
+              </div>
             </td>
           </tr>
           <?php endforeach; ?>
@@ -185,7 +197,7 @@ include_once __DIR__ . '/dungchung/header.php';
   <!-- Lich hen cho duyet -->
   <?php if ($dsLichHen): ?>
   <section>
-    <h2 class="text-lg font-bold text-text-main mb-4">Lich hen cho duyet (<?= count($dsLichHen) ?>)</h2>
+    <h2 class="text-lg font-bold text-text-main mb-4">Lịch hẹn chờ duyệt (<?= count($dsLichHen) ?>)</h2>
     <div class="space-y-3">
       <?php foreach ($dsLichHen as $lh):
         $ngayHen = date('d/m/Y', strtotime($lh['NgayHen']));
@@ -194,19 +206,19 @@ include_once __DIR__ . '/dungchung/header.php';
       <div class="bg-bg-main rounded-card border border-border-warm p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="space-y-0.5">
           <p class="text-sm font-bold text-text-main"><?= htmlspecialchars($lh['TenSV']) ?> - <?= htmlspecialchars($lh['TenPhong']) ?></p>
-          <p class="text-xs text-text-sub tnum"><?= $gioHen ?> ngay <?= $ngayHen ?></p>
+          <p class="text-xs text-text-sub tnum"><?= $gioHen ?> ngày <?= $ngayHen ?></p>
           <?php if ($lh['GhiChu']): ?><p class="text-xs text-text-sub"><?= htmlspecialchars($lh['GhiChu']) ?></p><?php endif; ?>
         </div>
         <div class="flex items-center gap-2">
-          <form method="POST" action="/DoAn_TimNhaTroSV_QLDAPM/chutro/duyetlichhen.php">
+          <form method="POST" action="<?= $base_url ?>/chutro/duyetlichhen.php">
             <input type="hidden" name="ma_lich" value="<?= $lh['MaLichHen'] ?>">
             <input type="hidden" name="hanh_dong" value="XacNhan">
-            <button type="submit" class="px-3 py-1.5 rounded-btn bg-accent text-white font-semibold text-xs">Xac nhan</button>
+            <button type="submit" class="px-3 py-1.5 rounded-btn bg-accent text-white font-semibold text-xs">Xác nhận</button>
           </form>
-          <form method="POST" action="/DoAn_TimNhaTroSV_QLDAPM/chutro/duyetlichhen.php">
+          <form method="POST" action="<?= $base_url ?>/chutro/duyetlichhen.php">
             <input type="hidden" name="ma_lich" value="<?= $lh['MaLichHen'] ?>">
             <input type="hidden" name="hanh_dong" value="TuChoi">
-            <button type="submit" class="px-3 py-1.5 rounded-btn border border-status-red-border bg-status-red-bg text-status-red-text font-semibold text-xs">Tu choi</button>
+            <button type="submit" class="px-3 py-1.5 rounded-btn border border-status-red-border bg-status-red-bg text-status-red-text font-semibold text-xs">Từ chối</button>
           </form>
         </div>
       </div>

@@ -48,7 +48,7 @@ $laChuTro = $nd_vaitro === 'ChuTro';
     <!-- Right Action Controls -->
     <div class="flex items-center gap-2.5 shrink-0">
       <?php if ($laChuTro || $laAdmin): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php#form-dang-tin" class="hidden items-center gap-1.5 bg-accent text-white font-semibold text-xs px-3.5 py-2 rounded-btn md:inline-flex transition-all duration-200 active:scale-[0.98]" type="button">
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/dangtin.php" class="hidden items-center gap-1.5 bg-accent text-white font-semibold text-xs px-3.5 py-2 rounded-btn md:inline-flex transition-all duration-200 active:scale-[0.98]" type="button">
         <span class="material-symbols-outlined">add</span>
         <span>Đăng tin trọ</span>
       </a>
@@ -103,6 +103,9 @@ $laChuTro = $nd_vaitro === 'ChuTro';
               </a>
               <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/dangtin.php" class="w-full px-4 py-2 text-left text-xs font-medium text-text-main hover:bg-bg-sub flex items-center gap-2">
                 <span class="material-symbols-outlined text-text-sub">post_add</span><span>Đăng tin trọ mới</span>
+              </a>
+              <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/danhsachphong.php" class="w-full px-4 py-2 text-left text-xs font-medium text-text-main hover:bg-bg-sub flex items-center gap-2">
+                <span class="material-symbols-outlined text-text-sub">view_list</span><span>Quản lý phòng trọ</span>
               </a>
               <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/duyetlichhen.php" class="w-full px-4 py-2 text-left text-xs font-medium text-text-main hover:bg-bg-sub flex items-center gap-2">
                 <span class="material-symbols-outlined text-text-sub">calendar_check</span><span>Duyệt lịch hẹn</span>

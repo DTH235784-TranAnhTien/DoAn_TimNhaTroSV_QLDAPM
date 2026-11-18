@@ -27,5 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     datThongBao('success', $tb);
 }
 
-header('Location: /DoAn_TimNhaTroSV_QLDAPM/chutro.php');
+$base_url = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
+if ($base_url === '' || $base_url === '/') {
+    $base_url = strpos($_SERVER['REQUEST_URI'], '/QLNhaTro') !== false ? '/QLNhaTro' : '/DoAn_TimNhaTroSV_QLDAPM';
+}
+
+header("Location: {$base_url}/chutro.php");
 exit();
