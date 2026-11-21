@@ -1,0 +1,309 @@
+﻿================================================================
+  DO AN: HE THONG TIM NHA TRO SINH VIEN - CampusNest AGU
+  PHAN TICH HIEN TRANG & PHAN CONG CONG VIEC (4 THANH VIEN)
+  Ngay lap: 29/10/2026
+================================================================
+
+
+====================================================================
+  PHAN 1: PHAN TICH HIEN TRANG DU AN
+====================================================================
+
+----- CAC FILE DA CO (DA HOAN THANH HOAC CO NOI DUNG) -----
+
+  [ROOT]
+  [OK] index.php              - Trang chu (15.7 KB - co noi dung)
+  [OK] danhsach.php           - Danh sach phong + loc/tim kiem (28.8 KB)
+  [OK] chitiet.php            - Chi tiet phong tro (11.7 KB)
+  [OK] chutro.php             - Dashboard chu tro (11.3 KB)
+  [OK] ghepban.php            - Tim ban ghep phong (33.9 KB)
+  [OK] camnang.php            - Cam nang thue tro (8.2 KB)
+  [OK] main.php               - Entry point chuyen huong (1.2 KB)
+  [OK] QLNhaTro.sql           - Database day du 12 bang (9.4 KB)
+
+  [/cauhinh/]
+  [OK] database.php           - Ket noi CSDL
+  [OK] auth.php               - Xac thuc, phan quyen, flash message
+  [OK] upload_helper.php      - Ho tro upload anh
+  [OK] hash_gen.php           - Tao hash mat khau
+  [OK] seed_demo.sql          - Du lieu mau
+
+  [/taikhoan/]
+  [OK] dangnhap.php           - Dang nhap (9.8 KB)
+  [OK] dangky.php             - Dang ky (10.4 KB)
+  [OK] dangxuat.php           - Dang xuat (438 B)
+  [OK] hoso.php               - Ho so ca nhan (22 KB)
+
+  [/chutro/]
+  [OK] dangtin.php            - Dang tin phong tro (17.2 KB)
+  [OK] duyetlichhen.php       - Xu ly xac nhan/tu choi lich hen (POST handler)
+
+  [/sinhvien/]
+  [OK] datlich.php            - Xu ly dat lich xem phong (POST handler)
+
+  [/quantri/]
+  [OK] index.php              - Dashboard quan tri tong hop (45.3 KB)
+
+  [/dungchung/]
+  [OK] header.php             - Header chung (16.5 KB)
+  [OK] thanhmenu.php          - Thanh menu/nav (14.5 KB)
+  [OK] footer.php             - Footer chung (3.1 KB)
+
+
+----- CAC FILE CON THIEU / CHI LA REDIRECT RONG -----
+
+  [CANH BAO] = File ton tai nhung chi la redirect rong (chua co noi dung thuc)
+  [THIEU]    = Tinh nang con thieu hoan toan
+
+  [/quantri/]
+  [CANH BAO] duyettin.php          - Chi redirect sang index.php?tab=moderation
+  [CANH BAO] thongke.php           - Chi redirect sang index.php?tab=dashboard
+  [CANH BAO] quanlytaikhoan.php    - Chi redirect sang index.php?tab=users
+
+  [/chutro/]
+  [CANH BAO] danhsachphong.php     - Chi redirect sang chutro.php
+
+  [/sinhvien/]
+  [CANH BAO] lichhencuatoi.php     - Chi redirect sang danhsach.php (can trang lich hen SV)
+  [CANH BAO] phongdaluu.php        - Chi redirect sang danhsach.php (can trang phong da luu)
+  [CANH BAO] timnguoioghep.php     - Chi redirect sang ghepban.php (co the giu nguyen)
+
+  [TINH NANG CHUA CO FILE / CHUA TRIEN KHAI]
+  [THIEU] Trang bao cao vi pham (BaoCaoViPham) - DB da co bang, chua co UI
+  [THIEU] Trang quan ly nhan danh muc (NhanDanhMuc) - DB da co bang
+  [THIEU] Chuc nang danh gia/review phong (DanhGia) - DB da co bang, chua co UI
+  [THIEU] Trang lich su giao dich/thue phong
+  [THIEU] Chuc nang thong bao realtime (notification)
+  [THIEU] Trang quan ly tien ich (TienIch) cho admin
+  [THIEU] API endpoint cho ban do (ViDo, KinhDo da co trong DB)
+  [THIEU] Trang chinh sach & dieu khoan
+  [THIEU] Trang 404 / Error page
+
+
+----- TONG KET HIEN TRANG -----
+
+  Tong file PHP             : ~25 file
+  File hoan chinh           : ~17 file  (~68%)
+  File chi la redirect      : ~7 file   (~28%)
+  Tinh nang thieu hoan toan : ~8 tinh nang
+  CSDL                      : 12/12 bang DA thiet ke day du [OK]
+  Giao dien chung           : header, footer, menu DA co [OK]
+
+
+====================================================================
+  PHAN 2: PHAN CONG CONG VIEC CHO 4 THANH VIEN
+====================================================================
+
+Ghi chu:
+  [Hoan thien] = Nang cap/sua file dang co
+  [Tao moi]    = Tao file moi tu dau
+  [Kiem tra]   = Test, debug, dam bao hoat dong dung
+
+
+--------------------------------------------------------------------
+  THANH VIEN 1 - PHU TRACH: MODULE SINH VIEN
+--------------------------------------------------------------------
+
+  Muc tieu: Hoan thien toan bo trai nghiem phia sinh vien
+
+  CONG VIEC CAN LAM:
+
+  1. [Tao moi] sinhvien/lichhencuatoi.php
+     - Hien thi danh sach lich hen xem phong cua sinh vien dang dang nhap
+     - Phan loai: Cho duyet / Da xac nhan / Da tu choi / Da huy
+     - Nut huy lich hen (cap nhat TrangThai = DaHuy)
+     - JOIN bang: LichHen -> PhongTro -> NhaTro -> NguoiDung (chu tro)
+
+  2. [Tao moi] sinhvien/phongdaluu.php
+     - Hien thi danh sach phong sinh vien da luu yeu thich
+     - JOIN bang: DanhSachYeuThich -> PhongTro -> HinhAnhPhongTro -> NhaTro
+     - Nut xoa khoi danh sach yeu thich
+     - Hien thi the trang thai phong (con/da thue)
+
+  3. [Hoan thien] chitiet.php
+     - Them section Danh gia & Nhan xet (bang DanhGia)
+     - Form gui danh gia (SoSao, DiemAnNinh, DiemGiaCa, DiemThaiDoChuTro, NoiDung)
+     - Hien thi danh sach reviews da co
+     - Them nut Bao cao vi pham (link sang form bao cao)
+
+  4. [Tao moi] sinhvien/danhgia.php (POST handler)
+     - Xu ly INSERT vao bang DanhGia
+     - Validate: chi sinh vien co lich hen HoanThanh moi duoc danh gia
+     - Redirect ve chitiet.php voi flash message
+
+  5. [Kiem tra] sinhvien/datlich.php
+     - Test cac case: dat lich thanh cong, thieu ngay/gio, phong khong ton tai
+     - Them tieng Viet day du cho thong bao (hien dang de tieng Anh khong dau)
+
+  FILE LIEN QUAN: chitiet.php, danhsach.php, sinhvien/datlich.php
+
+
+--------------------------------------------------------------------
+  THANH VIEN 2 - PHU TRACH: MODULE CHU TRO
+--------------------------------------------------------------------
+
+  Muc tieu: Hoan thien bang dieu khien va tinh nang quan ly cua chu tro
+
+  CONG VIEC CAN LAM:
+
+  1. [Tao moi] chutro/danhsachphong.php
+     - Trang quan ly danh sach phong tro cua chu tro dang dang nhap
+     - Hien thi: Ten phong, Gia thue, Trang thai phong, Trang thai duyet
+     - Nut: Sua thong tin phong, An/Hien tin, Xoa phong
+     - JOIN: PhongTro -> NhaTro -> HinhAnhPhongTro
+
+  2. [Tao moi] chutro/suaphong.php
+     - Form sua thong tin phong da dang (keo du lieu tu DB)
+     - Tuong tu dangtin.php nhung dung UPDATE thay INSERT
+     - Cho phep them/xoa anh
+
+  3. [Hoan thien] chutro.php (Dashboard chu tro)
+     - Tab  Lich hen cho duyet: Hien thi day du thong tin sinh vien dat hen
+     - Them nut Xac nhan / Tu choi truc tiep trong dashboard
+     - Them so lieu thong ke: Tong phong, Phong con trong, Lich hen hom nay
+     - Them tinh nang: Danh dau phong Dang bao tri / Da thue
+
+  4. [Hoan thien] chutro/dangtin.php
+     - Kiem tra validation day du phia server
+     - Xu ly upload nhieu anh (dung upload_helper.php)
+     - Them tien ich chon (checkbox TienIch tu bang TienIch)
+     - Them chon nhan tu dong (NhanDanhMuc)
+
+  5. [Tao moi] chutro/xoaphong.php (POST handler)
+     - Xu ly DELETE phong tro (soft delete hoac hard delete)
+     - Kiem tra quyen so huu truoc khi xoa
+
+  FILE LIEN QUAN: chutro.php, chutro/dangtin.php, chutro/duyetlichhen.php
+
+
+--------------------------------------------------------------------
+  THANH VIEN 3 - PHU TRACH: MODULE QUAN TRI VIEN (ADMIN)
+--------------------------------------------------------------------
+
+  Muc tieu: Hoan thien he thong quan tri, kiem duyet va thong ke
+
+  CONG VIEC CAN LAM:
+
+  1. [Hoan thien] quantri/index.php
+     - Tab Dashboard: Them bieu do thong ke (Chart.js)
+       * Phong dang ky theo thang
+       * Nguoi dung moi theo tuan
+       * Ti le phong con/da thue
+     - Tab Duyet tin: Hoan thien UI xem anh phong, thong tin chu tro truoc khi duyet
+     - Tab Nguoi dung: Them chuc nang Khoa/Mo khoa tai khoan (BiKhoa/HoatDong)
+     - Tab Bao cao vi pham: Hien thi danh sach BaoCaoViPham, nut Xu ly / Bo qua
+
+  2. [Tao moi] quantri/xuly_baocao.php (POST handler)
+     - Xu ly cap nhat TrangThai bao cao vi pham (DaXuLy / BoQua)
+     - Tuy chon: Khoa tai khoan chu tro vi pham ngay sau khi xu ly
+
+  3. [Tao moi] quantri/quanly_tienich.php
+     - CRUD quan ly danh muc tien ich (TienIch): Them/Sua/Xoa
+     - CRUD quan ly nhan danh muc (NhanDanhMuc)
+
+  4. [Tao moi] quantri/xuly_taikhoan.php (POST handler)
+     - Xu ly khoa/mo khoa tai khoan nguoi dung
+     - Xu ly xac thuc chu chinh chu (DaXacThucChinhChu = TRUE)
+
+  5. [Tao moi] taikhoan/quenmatkhau.php
+     - Form nhap email quen mat khau
+     - Gui link reset (hoac hien thi tam thoi cho demo)
+
+  FILE LIEN QUAN: quantri/index.php, cauhinh/auth.php
+
+
+--------------------------------------------------------------------
+  THANH VIEN 4 - PHU TRACH: GIAO DIEN, TIM KIEM & TONG HOP
+--------------------------------------------------------------------
+
+  Muc tieu: Nang cao UX/UI, hoan thien tim kiem va tich hop tong the
+
+  CONG VIEC CAN LAM:
+
+  1. [Hoan thien] danhsach.php
+     - Kiem tra va sua bo loc: Khoang gia, Dien tich, Tien ich, Quan/Khu vuc
+     - Them phan trang (Pagination) cho danh sach phong
+     - Them tinh nang: Sap xep theo gia tang/giam, moi nhat
+     - Dam bao chi hien thi phong co TrangThaiDuyet = DaDuyet
+     - Them nut Luu yeu thich (toggle DanhSachYeuThich) voi AJAX
+
+  2. [Hoan thien] index.php
+     - Them banner/slider noi bat
+     - Hien thi phong noi bat (moi dang, gia tot)
+     - Them thanh tim kiem nhanh trung tam
+     - Them section thong ke tong quan (so phong, so chu tro...)
+
+  3. [Tao moi] sinhvien/yeuthich_toggle.php (AJAX handler)
+     - Xu ly them/xoa yeu thich (INSERT/DELETE DanhSachYeuThich)
+     - Tra ve JSON {status: added/removed}
+
+  4. [Tao moi] 404.php
+     - Trang loi 404 tuy chinh dep
+     - Them link ve trang chu
+
+  5. [Hoan thien] dungchung/header.php & thanhmenu.php
+     - Them badge thong bao so lich hen cho duyet (cho chu tro)
+     - Them dropdown thong bao
+     - Dam bao responsive tren mobile
+
+  6. [Kiem tra & Tich hop]
+     - Test toan bo luong: Dang ky -> Dang nhap -> Tim phong -> Dat lich -> Duyet lich
+     - Test luong chu tro: Dang nhap -> Dang tin -> Duyet lich
+     - Test luong admin: Duyet tin -> Khoa tai khoan
+     - Sua loi tieng Viet (cac cho con de tieng Anh khong dau)
+     - Kiem tra responsive tren mobile
+
+  FILE LIEN QUAN: index.php, danhsach.php, dungchung/*
+
+
+====================================================================
+  PHAN 3: UU TIEN & TIMELINE GOI Y
+====================================================================
+
+  DOT 1 - UU TIEN CAO (Lam truoc):
+  ----------------------------------
+  TV1: sinhvien/lichhencuatoi.php + sinhvien/phongdaluu.php
+  TV2: chutro/danhsachphong.php + hoan thien chutro.php
+  TV3: Tab Duyet tin + Tab Khoa tai khoan trong quantri/index.php
+  TV4: Phan trang danhsach.php + nut Luu yeu thich
+
+  DOT 2 - UU TIEN TRUNG BINH:
+  ------------------------------
+  TV1: Form danh gia + sinhvien/danhgia.php
+  TV2: chutro/suaphong.php + validation dangtin.php
+  TV3: quantri/xuly_baocao.php + quantri/quanly_tienich.php
+  TV4: index.php banner + yeuthich_toggle.php (AJAX)
+
+  DOT 3 - HOAN THIEN & POLISH:
+  ------------------------------
+  Tat ca: Kiem tra tong the, sua loi, test responsive
+  TV4: Tong hop va merge cac phan
+  Tat ca: Viet bao cao do an
+
+
+====================================================================
+  PHAN 4: CAC VAN DE CAN LUU Y CHUNG
+====================================================================
+
+  [!] VAN DE BAO MAT:
+  - Tat ca file POST handler can kiem tra CSRF token
+  - Validate va sanitize input day du truoc khi INSERT/UPDATE
+  - Kiem tra quyen so huu truoc moi thao tac UPDATE/DELETE
+  - File upload: gioi han loai file (jpg/png/webp), kich thuoc
+
+  [!] VAN DE KY THUAT:
+  - Mot so file hien chi la redirect rong, can thay bang noi dung thuc
+  - Thong bao tieng Anh khong dau trong datlich.php can sua sang tieng Viet
+  - Chua co trang 404 tuy chinh
+  - Chua co xu ly loi ket noi database
+
+  [DIEM TOT]:
+  - Co so du lieu thiet ke day du 12 bang
+  - He thong xac thuc (auth.php) hoat dong tot
+  - Giao dien chung (header/footer/menu) da hoan thien
+  - Cac trang lon (index, danhsach, ghepban, quantri) da co noi dung
+
+================================================================
+  Ghi chu: File nay duoc tao tu dong boi AI Assistant
+  Cap nhat lan cuoi: 29/10/2026
+================================================================
