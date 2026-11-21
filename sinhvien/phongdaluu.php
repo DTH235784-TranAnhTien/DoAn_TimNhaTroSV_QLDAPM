@@ -45,7 +45,7 @@ $sql = "
              LIMIT 1),
             (SELECT h2.DuongDan FROM HinhAnhPhongTro h2
              WHERE h2.MaPhong = p.MaPhong
-             ORDER BY h2.MaHinhAnh ASC
+             ORDER BY h2.MaHinh ASC
              LIMIT 1)
         ) AS AnhDaiDien
     FROM DanhSachYeuThich dy
@@ -54,12 +54,15 @@ $sql = "
     WHERE dy.MaSinhVien = ?
     ORDER BY dy.NgayLuu DESC
 ";
+$dsPhong = [];
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('i', $mand);
-$stmt->execute();
-$result  = $stmt->get_result();
-$dsPhong = $result->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
+if ($stmt) {
+    $stmt->bind_param('i', $mand);
+    $stmt->execute();
+    $result  = $stmt->get_result();
+    $dsPhong = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt->close();
+}
 
 // ── Metadata trang ──────────────────────────────────────────────────────────
 $tieuDeTrang  = 'Phòng đã lưu — CampusNest AGU';
@@ -108,9 +111,10 @@ include_once __DIR__ . '/../dungchung/header.php';
 
     <?php foreach ($dsPhong as $phong): ?>
     <?php
-      $anhUrl = !empty($phong['AnhDaiDien'])
-        ? '/DoAn_TimNhaTroSV_QLDAPM/' . ltrim($phong['AnhDaiDien'], '/')
-        : '/DoAn_TimNhaTroSV_QLDAPM/giaodien/img/placeholder-room.jpg';
+      $anhRaw = $phong['AnhDaiDien'] ?? '';
+      $anhUrl = !empty($anhRaw)
+        ? (str_starts_with($anhRaw, '/') || str_starts_with($anhRaw, 'http') ? $anhRaw : '/DoAn_TimNhaTroSV_QLDAPM/' . ltrim($anhRaw, '/'))
+        : '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/hero-banner.jpg';
 
       $trangThai  = $phong['TrangThai'] ?? '';
       $giaFormat  = number_format((float)$phong['GiaThue'], 0, ',', '.');
