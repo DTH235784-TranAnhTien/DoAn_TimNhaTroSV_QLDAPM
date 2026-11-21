@@ -31,9 +31,9 @@ if (empty($moTa)) {
     exit();
 }
 
-// Lấy toàn bộ nhãn danh mục từ DB
+// Lấy toàn bộ nhãn danh mục (kèm từ khóa nhận diện) từ DB
 $danhSachNhan = [];
-$resNhan = $conn->query("SELECT MaNhan, TenNhan FROM NhanDanhMuc ORDER BY MaNhan ASC");
+$resNhan = $conn->query("SELECT MaNhan, TenNhan, TuKhoaNhanDien FROM NhanDanhMuc ORDER BY MaNhan ASC");
 if ($resNhan) {
     $danhSachNhan = $resNhan->fetch_all(MYSQLI_ASSOC);
 }

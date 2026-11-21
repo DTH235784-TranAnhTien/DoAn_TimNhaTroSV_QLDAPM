@@ -18,8 +18,8 @@ define('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/model
 function geminiGanNhan(string $moTa, array $danhSachNhan): array {
     if (empty($moTa) || empty($danhSachNhan)) return [];
 
-    // Nếu đã cấu hình API key thật thì gọi Gemini REST API
-    if (GEMINI_API_KEY !== '' && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY') {
+    // Nếu đã cấu hình API key thật và máy có bật cURL thì gọi Gemini REST API
+    if (GEMINI_API_KEY !== '' && GEMINI_API_KEY !== 'YOUR_GEMINI_API_KEY' && function_exists('curl_init')) {
         $tenNhanList = array_map(fn($n) => $n['MaNhan'] . ': ' . $n['TenNhan'], $danhSachNhan);
         $prompt = "Bạn là AI hỗ trợ phân loại phòng trọ sinh viên Việt Nam.\n"
             . "Dựa trên mô tả phòng sau, hãy chọn TỐI ĐA 5 nhãn phù hợp nhất từ danh sách bên dưới.\n"
@@ -58,13 +58,23 @@ function geminiGanNhan(string $moTa, array $danhSachNhan): array {
         }
     }
 
-    // Fallback cục bộ (khi chưa có API key hoặc mất mạng) — khớp từ khóa tiếng Việt
+    // Fallback cục bộ (khi chưa có API key hoặc mất mạng) — khớp cả TuKhoaNhanDien lẫn TenNhan
     $moTaLower = mb_strtolower($moTa, 'UTF-8');
     $ketQua = [];
     foreach ($danhSachNhan as $nhan) {
+        $diem = 0;
+        // 1. Khớp theo danh sách cụm từ khóa chuẩn trong NhanDanhMuc.TuKhoaNhanDien
+        if (!empty($nhan['TuKhoaNhanDien'])) {
+            $cumTu = array_filter(array_map('trim', explode(',', mb_strtolower($nhan['TuKhoaNhanDien'], 'UTF-8'))));
+            foreach ($cumTu as $kw) {
+                if ($kw !== '' && mb_strpos($moTaLower, $kw, 0, 'UTF-8') !== false) {
+                    $diem += 2;
+                }
+            }
+        }
+        // 2. Khớp theo từng từ trong TenNhan
         $tenLower = mb_strtolower($nhan['TenNhan'], 'UTF-8');
         $tuKhoa = array_filter(preg_split('/[\s,\/\-]+/u', $tenLower), fn($w) => mb_strlen($w, 'UTF-8') >= 2);
-        $diem = 0;
         foreach ($tuKhoa as $kw) {
             if (mb_strpos($moTaLower, $kw, 0, 'UTF-8') !== false) {
                 $diem++;
