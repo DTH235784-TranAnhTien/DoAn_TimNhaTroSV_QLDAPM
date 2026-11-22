@@ -346,7 +346,7 @@ include_once __DIR__ . '/dungchung/header.php';
           $sdt    = $p['SoDienThoai'] ?? '';
           $ngay   = $p['NgayDang'] ? date('d/m/Y', strtotime($p['NgayDang'])) : '—';
         ?>
-        <article class="bg-bg-main rounded-card border border-border-warm card-hover overflow-hidden flex flex-col group cursor-pointer transition-all duration-200"
+        <article class="bg-bg-main rounded-card border border-border-warm card-hover overflow-hidden flex flex-col group cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                  onclick="focusRoomOnMap(<?= $p['MaPhong'] ?>)">
           <!-- Ảnh đại diện -->
           <div class="relative overflow-hidden aspect-[16/10] bg-bg-sub">
@@ -362,6 +362,11 @@ include_once __DIR__ . '/dungchung/header.php';
             <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold inline-flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>Còn phòng
             </span>
+            <?php if ((float)$p['GiaThue'] <= 1300000): ?>
+            <span class="absolute top-2.5 left-28 px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-[10px] font-bold inline-flex items-center gap-1 border border-border-warm/60">
+              <span class="material-symbols-outlined text-[12px]">local_fire_department</span>Giá tốt SV
+            </span>
+            <?php endif; ?>
             <!-- Nút Lưu yêu thích (AJAX) -->
             <?php $daLuu = in_array((int)$p['MaPhong'], $phongDaLuuIds, true); ?>
             <button type="button" 

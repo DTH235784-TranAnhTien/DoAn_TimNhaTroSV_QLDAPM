@@ -49,6 +49,28 @@
   </div><!-- /wrapper -->
   <?php endif; ?>
 
+  <!-- Nút cuộn lên đầu trang (Back to top) -->
+  <button id="btn-back-to-top" type="button" onclick="window.scrollTo({top: 0, behavior: 'smooth'})"
+          title="Cuộn lên đầu trang"
+          class="fixed bottom-6 right-6 z-40 hidden w-10 h-10 rounded-full bg-accent text-white shadow-lg items-center justify-center hover:opacity-90 transition-all duration-300">
+    <span class="material-symbols-outlined text-[20px]">arrow_upward</span>
+  </button>
+
+  <script>
+    window.addEventListener('scroll', () => {
+      const btn = document.getElementById('btn-back-to-top');
+      if (btn) {
+        if (window.scrollY > 300) {
+          btn.classList.remove('hidden');
+          btn.classList.add('flex');
+        } else {
+          btn.classList.add('hidden');
+          btn.classList.remove('flex');
+        }
+      }
+    });
+  </script>
+
   <script src="/DoAn_TimNhaTroSV_QLDAPM/giaodien/js/main.js"></script>
 </body>
 </html>
