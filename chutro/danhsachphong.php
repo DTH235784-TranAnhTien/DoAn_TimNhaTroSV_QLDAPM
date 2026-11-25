@@ -288,7 +288,18 @@ include_once __DIR__ . '/../dungchung/header.php';
               $dt     = (float)$p['DienTich'];
               $tt     = $p['TrangThai'];
               $duyet  = $p['TrangThaiDuyet'];
-              $anhHienThi = $p['AnhDaiDien'] ? $base_url . '/' . ltrim($p['AnhDaiDien'], '/') : 'https://placehold.co/120x80/e2e8f0/64748b?text=Anh+Phong';
+              if (!empty($p['AnhDaiDien'])) {
+                  $anh = $p['AnhDaiDien'];
+                  if (str_starts_with($anh, 'http') || str_starts_with($anh, '/DoAn_TimNhaTroSV_QLDAPM/')) {
+                      $anhHienThi = $anh;
+                  } elseif (str_starts_with($anh, '/')) {
+                      $anhHienThi = $anh;
+                  } else {
+                      $anhHienThi = $base_url . '/' . ltrim($anh, '/');
+                  }
+              } else {
+                  $anhHienThi = 'https://placehold.co/120x80/e2e8f0/64748b?text=Chua+Co+Anh';
+              }
             ?>
             <tr class="hover:bg-bg-sub/30 transition-colors">
               

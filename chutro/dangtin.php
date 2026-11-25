@@ -20,6 +20,13 @@ $stmtNT->execute();
 $dsNhaTro = $stmtNT->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmtNT->close();
 
+// Lấy danh sách toàn bộ tiện ích có trong hệ thống
+$dsTienIchAll = [];
+$resTI = $conn->query("SELECT MaTienIch, TenTienIch, Icon FROM TienIch ORDER BY MaTienIch ASC");
+if ($resTI) {
+    $dsTienIchAll = $resTI->fetch_all(MYSQLI_ASSOC);
+}
+
 $loi = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -52,19 +59,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$tenNhaTro || !$diaChi) {
             $loi[] = 'Vui lòng nhập tên nhà trọ và địa chỉ.';
         } else {
-            if ($viDo && $kinhDo) {
-                $stmtNewNT = $conn->prepare("INSERT INTO NhaTro (MaChuTro, TenNhaTro, DiaChi, ViDo, KinhDo, NgayTao) VALUES (?, ?, ?, ?, ?, NOW())");
-                $stmtNewNT->bind_param('issdd', $mand, $tenNhaTro, $diaChi, $viDo, $kinhDo);
+            // Đảm bảo MaChuTro tồn tại trong bảng NguoiDung
+            $chkND = $conn->prepare("SELECT MaNguoiDung FROM NguoiDung WHERE MaNguoiDung = ? LIMIT 1");
+            $chkND->bind_param('i', $mand);
+            $chkND->execute();
+            $resND = $chkND->get_result();
+            $chkND->close();
+
+            if (!$resND || $resND->num_rows === 0) {
+                $loi[] = 'Tài khoản chủ trọ không hợp lệ hoặc đã bị thay đổi trong CSDL. Vui lòng đăng xuất và đăng nhập lại.';
             } else {
-                $stmtNewNT = $conn->prepare("INSERT INTO NhaTro (MaChuTro, TenNhaTro, DiaChi, NgayTao) VALUES (?, ?, ?, NOW())");
-                $stmtNewNT->bind_param('iss', $mand, $tenNhaTro, $diaChi);
+                if ($viDo && $kinhDo) {
+                    $stmtNewNT = $conn->prepare("INSERT INTO NhaTro (MaChuTro, TenNhaTro, DiaChi, ViDo, KinhDo, NgayTao) VALUES (?, ?, ?, ?, ?, NOW())");
+                    $stmtNewNT->bind_param('issdd', $mand, $tenNhaTro, $diaChi, $viDo, $kinhDo);
+                } else {
+                    $stmtNewNT = $conn->prepare("INSERT INTO NhaTro (MaChuTro, TenNhaTro, DiaChi, NgayTao) VALUES (?, ?, ?, NOW())");
+                    $stmtNewNT->bind_param('iss', $mand, $tenNhaTro, $diaChi);
+                }
+                if ($stmtNewNT->execute()) {
+                    $maNhaTro = $stmtNewNT->insert_id;
+                } else {
+                    $loi[] = 'Không thể tạo nhà trọ mới: ' . $conn->error;
+                }
+                $stmtNewNT->close();
             }
-            if ($stmtNewNT->execute()) {
-                $maNhaTro = $stmtNewNT->insert_id;
-            } else {
-                $loi[] = 'Không thể tạo nhà trọ mới.';
-            }
-            $stmtNewNT->close();
         }
     }
 
@@ -84,9 +102,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 require_once __DIR__ . '/../cauhinh/upload_helper.php';
                 $dsAnhDaLuu = xuLyUploadAnhPhongTro($_FILES['anh_phong'], $maPhongMoi);
                 if (!empty($dsAnhDaLuu)) {
-                    $stmtAnh = $conn->prepare("INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh) VALUES (?, ?, ?)");
+                    $viTriAnhChinh = (int)($_POST['vi_tri_anh_chinh'] ?? 0);
+                    if ($viTriAnhChinh < 0 || $viTriAnhChinh >= count($dsAnhDaLuu)) {
+                        $viTriAnhChinh = 0;
+                    }
+                    $stmtAnh = $conn->prepare("INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh, NgayTaiLen) VALUES (?, ?, ?, NOW())");
                     foreach ($dsAnhDaLuu as $idx => $duongDan) {
-                        $laChinh = ($idx === 0) ? 1 : 0;
+                        $laChinh = ($idx === $viTriAnhChinh) ? 1 : 0;
                         $stmtAnh->bind_param('isi', $maPhongMoi, $duongDan, $laChinh);
                         $stmtAnh->execute();
                     }
@@ -94,8 +116,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // Lưu tiện ích phòng trọ
+            $tienIchChon = $_POST['tien_ich'] ?? [];
+            if (!empty($tienIchChon) && is_array($tienIchChon)) {
+                $stmtTI = $conn->prepare("INSERT INTO PhongTro_TienIch (MaPhong, MaTienIch) VALUES (?, ?)");
+                foreach ($tienIchChon as $mti) {
+                    $mti = (int)$mti;
+                    if ($mti > 0) {
+                        $stmtTI->bind_param('ii', $maPhongMoi, $mti);
+                        $stmtTI->execute();
+                    }
+                }
+                $stmtTI->close();
+            }
+
             datThongBao('success', 'Đăng tin phòng trọ thành công! ' . ($trangThaiDuyet === 'ChoDuyet' ? 'Tin đăng đang chờ Ban quản trị duyệt.' : ''));
-            header('Location: /DoAn_TimNhaTroSV_QLDAPM/chutro.php');
+            header('Location: /DoAn_TimNhaTroSV_QLDAPM/chutro/danhsachphong.php');
             exit();
         } else {
             $loi[] = 'Không thể lưu tin phòng trọ. Vui lòng thử lại.';
@@ -214,23 +250,32 @@ include_once __DIR__ . '/../dungchung/header.php';
         </div>
 
         <!-- Tải ảnh từ máy tính (không dùng URL) -->
-        <div class="space-y-2">
-          <label class="block text-xs font-semibold text-text-main">
-            Hình ảnh phòng trọ (Tải ảnh từ máy tính / điện thoại) <span class="text-accent text-[11px] font-normal">— Ảnh đầu tiên sẽ là ảnh chính</span>
-          </label>
-          <div id="dropzone" onclick="document.getElementById('anh_phong').click()"
-               class="border-2 border-dashed border-border-warm hover:border-accent rounded-card p-6 text-center cursor-pointer transition-colors bg-bg-sub/40 hover:bg-bg-sub group">
-            <span class="material-symbols-outlined text-4xl text-accent group-hover:scale-110 transition-transform mb-1.5">add_photo_alternate</span>
-            <p class="text-sm font-semibold text-text-main">Nhấp để chọn ảnh từ máy của bạn</p>
-            <p class="text-xs text-text-sub mt-1">Hỗ trợ JPG, PNG, WEBP. Tối đa 10MB/ảnh. Có thể chọn cùng lúc nhiều ảnh chụp các góc phòng.</p>
-            <input type="file" id="anh_phong" name="anh_phong[]" multiple accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden" onchange="previewRoomImages(this)">
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-semibold text-text-main">
+              Hình ảnh phòng trọ (Tải ảnh từ máy tính / điện thoại)
+            </label>
+            <span class="text-[11px] text-text-sub">Bấm vào ảnh để đặt làm <strong class="text-accent">Ảnh chính</strong></span>
           </div>
 
-          <div id="preview-container" class="hidden space-y-2 pt-2">
+          <div id="dropzone" onclick="document.getElementById('file_input_temp').click()"
+               class="border-2 border-dashed border-border-warm hover:border-accent rounded-card p-6 text-center cursor-pointer transition-colors bg-bg-sub/40 hover:bg-bg-sub group">
+            <span class="material-symbols-outlined text-4xl text-accent group-hover:scale-110 transition-transform mb-1.5">add_photo_alternate</span>
+            <p class="text-sm font-semibold text-text-main">Nhấp để chọn ảnh (có thể chọn nhiều ảnh cùng lúc hoặc thêm từng ảnh)</p>
+            <p class="text-xs text-text-sub mt-1">Hỗ trợ JPG, PNG, WEBP. Chọn thêm ảnh sẽ cộng dồn chứ không bị mất ảnh cũ.</p>
+            <!-- Input file tạm để người dùng chọn nhiều lần -->
+            <input type="file" id="file_input_temp" multiple accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden" onchange="handleAddImages(this)">
+          </div>
+
+          <!-- Input file thật được submit lên server qua DataTransfer -->
+          <input type="file" id="anh_phong" name="anh_phong[]" multiple accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
+          <input type="hidden" id="vi_tri_anh_chinh" name="vi_tri_anh_chinh" value="0">
+
+          <div id="preview-container" class="hidden space-y-3 pt-2">
             <div class="flex items-center justify-between">
               <span id="preview-count" class="text-xs font-semibold text-text-main"></span>
-              <button type="button" onclick="document.getElementById('anh_phong').click()" class="text-xs text-accent font-semibold hover:underline flex items-center gap-1">
-                <span class="material-symbols-outlined text-sm">add_photo_alternate</span> Chọn lại hoặc thêm ảnh
+              <button type="button" onclick="document.getElementById('file_input_temp').click()" class="text-xs text-accent font-semibold hover:underline flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">add_photo_alternate</span> + Chọn thêm ảnh khác
               </button>
             </div>
             <div id="preview-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
@@ -241,6 +286,28 @@ include_once __DIR__ . '/../dungchung/header.php';
           <label class="block text-xs font-semibold text-text-main mb-1">Mô tả thêm về phòng</label>
           <textarea name="mo_ta" rows="3" placeholder="Ghi chú thêm về tiện nghi, giờ giấc, an ninh, nội quy..." class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent resize-none"></textarea>
         </div>
+
+        <!-- Tiện ích phòng trọ -->
+        <?php if (!empty($dsTienIchAll)): ?>
+        <div class="space-y-2 pt-2">
+          <label class="block text-xs font-semibold text-text-main">
+            Tiện ích kèm theo <span class="text-text-sub text-[11px] font-normal">— Chọn các tiện nghi có sẵn của phòng</span>
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <?php foreach ($dsTienIchAll as $ti): ?>
+            <label class="flex items-center gap-2 p-2.5 rounded-btn border border-border-warm hover:border-accent bg-bg-sub/50 hover:bg-bg-sub cursor-pointer transition-colors text-xs text-text-main">
+              <input type="checkbox" name="tien_ich[]" value="<?= (int)$ti['MaTienIch'] ?>" class="rounded accent-accent w-4 h-4 cursor-pointer">
+              <span class="flex items-center gap-1.5 font-medium">
+                <?php if (!empty($ti['Icon'])): ?>
+                <span class="material-symbols-outlined text-[16px] text-accent"><?= htmlspecialchars($ti['Icon']) ?></span>
+                <?php endif; ?>
+                <?= htmlspecialchars($ti['TenTienIch']) ?>
+              </span>
+            </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
       </div>
 
       <div class="flex items-center justify-end gap-3 pt-2">
@@ -270,31 +337,93 @@ function toggleNewNhaTro(val) {
     }
   }
 }
-function previewRoomImages(input) {
+
+// Quản lý danh sách file ảnh bằng DataTransfer để hỗ trợ cộng dồn và xóa từng ảnh
+let selectedFiles = [];
+let viTriChinh = 0;
+
+function handleAddImages(input) {
+  if (!input.files || input.files.length === 0) return;
+
+  // Cộng dồn các file mới vào mảng
+  Array.from(input.files).forEach(file => {
+    // Tránh trùng lặp tên và kích thước file
+    const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+    if (!exists) {
+      selectedFiles.push(file);
+    }
+  });
+
+  // Reset input tạm để lần sau chọn tiếp vẫn kích hoạt onchange
+  input.value = '';
+
+  syncFilesAndRender();
+}
+
+function removeImageAt(index, event) {
+  if (event) event.stopPropagation();
+  selectedFiles.splice(index, 1);
+  if (viTriChinh >= selectedFiles.length) {
+    viTriChinh = Math.max(0, selectedFiles.length - 1);
+  }
+  syncFilesAndRender();
+}
+
+function setMainImage(index) {
+  viTriChinh = index;
+  document.getElementById('vi_tri_anh_chinh').value = viTriChinh;
+  renderPreviews();
+}
+
+function syncFilesAndRender() {
+  const dt = new DataTransfer();
+  selectedFiles.forEach(f => dt.items.add(f));
+  const mainInput = document.getElementById('anh_phong');
+  mainInput.files = dt.files;
+
+  document.getElementById('vi_tri_anh_chinh').value = viTriChinh;
+  renderPreviews();
+}
+
+function renderPreviews() {
   const container = document.getElementById('preview-container');
   const grid = document.getElementById('preview-grid');
   const countLabel = document.getElementById('preview-count');
-  if (!input.files || input.files.length === 0) {
+
+  if (selectedFiles.length === 0) {
     container.classList.add('hidden');
     grid.innerHTML = '';
     return;
   }
 
-  grid.innerHTML = '';
   container.classList.remove('hidden');
-  countLabel.textContent = `Đã chọn ${input.files.length} ảnh từ thiết bị:`;
+  countLabel.textContent = `Đã chọn ${selectedFiles.length} ảnh:`;
+  grid.innerHTML = '';
 
-  Array.from(input.files).forEach((file, index) => {
+  selectedFiles.forEach((file, index) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      const isMain = (index === viTriChinh);
       const card = document.createElement('div');
-      card.className = 'relative rounded-card overflow-hidden border border-border-warm bg-bg-main aspect-[4/3] group shadow-2xs';
+      card.className = `relative rounded-card overflow-hidden border-2 cursor-pointer transition-all aspect-[4/3] group shadow-sm ${isMain ? 'border-accent ring-2 ring-accent/30' : 'border-border-warm hover:border-accent/60'}`;
+      card.title = 'Bấm vào để chọn làm Ảnh chính';
+      card.onclick = () => setMainImage(index);
+
       card.innerHTML = `
         <img src="${e.target.result}" class="w-full h-full object-cover">
-        <span class="absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${index === 0 ? 'bg-accent text-white' : 'bg-black/60 text-white'}">
-          ${index === 0 ? 'Ảnh chính' : '#' + (index + 1)}
+        
+        <!-- Nhãn trạng thái ảnh chính -->
+        <span class="absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${isMain ? 'bg-accent text-white shadow' : 'bg-black/60 text-white'}">
+          ${isMain ? '★ Ảnh chính' : '#' + (index + 1)}
         </span>
-        <div class="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] p-1 truncate text-center">
+
+        <!-- Nút xóa ảnh -->
+        <button type="button" onclick="removeImageAt(${index}, event)" title="Xóa ảnh này" class="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center hover:bg-red-700 transition-colors shadow">
+          <span class="material-symbols-outlined text-[14px]">close</span>
+        </button>
+
+        <!-- Tên file -->
+        <div class="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[10px] px-1.5 py-1 truncate text-center">
           ${file.name}
         </div>
       `;
