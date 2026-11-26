@@ -63,10 +63,10 @@ include_once __DIR__ . '/dungchung/header.php';
 
       <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border-warm text-xs">
         <span class="text-text-sub font-medium">Lọc nhanh:</span>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Cách cổng trường &lt; 500m</a>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Giờ giấc tự do 24/7</a>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Có máy lạnh</a>
-        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Khu trọ nữ riêng</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=gan-truong" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Cách cổng trường &lt; 500m</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=tu-do" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Giờ giấc tự do 24/7</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=may-lanh" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Có máy lạnh</a>
+        <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=nu-rieng" class="px-2.5 py-1 rounded-card bg-bg-main border border-border-warm text-text-main card-hover transition-all duration-200 active:scale-[0.98]">Khu trọ nữ riêng</a>
         <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="ml-auto text-accent font-semibold underline">Tìm bạn ở ghép bằng AI →</a>
       </div>
     </form>
@@ -100,9 +100,18 @@ include_once __DIR__ . '/dungchung/header.php';
     $resPhong  = $conn->query($sqlPhong);
     $dsPhong   = $resPhong ? $resPhong->fetch_all(MYSQLI_ASSOC) : [];
 
-    /* KPI tổng phòng đã duyệt */
+    /* KPI thống kê tổng quan hệ thống (Thành viên 4) */
     $kpiRow = $conn->query("SELECT COUNT(*) AS tong FROM PhongTro WHERE TrangThaiDuyet='DaDuyet' AND TrangThai='ConPhong'");
     $tongPhong = $kpiRow ? (int)$kpiRow->fetch_assoc()['tong'] : 0;
+
+    $kpiNhaTro = $conn->query("SELECT COUNT(*) AS tong FROM NhaTro");
+    $tongNhaTro = $kpiNhaTro ? (int)$kpiNhaTro->fetch_assoc()['tong'] : 0;
+
+    $kpiChuTro = $conn->query("SELECT COUNT(*) AS tong FROM NguoiDung WHERE VaiTro = 'ChuTro'");
+    $tongChuTro = $kpiChuTro ? (int)$kpiChuTro->fetch_assoc()['tong'] : 0;
+
+    $kpiSinhVien = $conn->query("SELECT COUNT(*) AS tong FROM NguoiDung WHERE VaiTro = 'SinhVien'");
+    $tongSinhVien = $kpiSinhVien ? (int)$kpiSinhVien->fetch_assoc()['tong'] : 0;
     ?>
 
     <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
@@ -215,7 +224,52 @@ include_once __DIR__ . '/dungchung/header.php';
     <?php endif; ?>
     <?php endif; ?>
 
+    <!-- Section Thống kê tổng quan hệ thống (Thành viên 4) -->
     <div class="mt-10 pt-6 border-t border-border-warm">
+      <div class="mb-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-text-sub">Thống kê hệ thống CampusNest AGU</h3>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-bg-sub/80 border border-border-warm rounded-card p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-btn bg-status-green-bg text-accent flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined">meeting_room</span>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-text-main tnum leading-tight"><?= $tongPhong ?></p>
+            <p class="text-xs text-text-sub">Phòng đang trống</p>
+          </div>
+        </div>
+        <div class="bg-bg-sub/80 border border-border-warm rounded-card p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-btn bg-status-amber-bg text-status-amber-text flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined">home_work</span>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-text-main tnum leading-tight"><?= $tongNhaTro ?></p>
+            <p class="text-xs text-text-sub">Khu nhà trọ liên kết</p>
+          </div>
+        </div>
+        <div class="bg-bg-sub/80 border border-border-warm rounded-card p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-btn bg-status-green-bg text-accent flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined">verified_user</span>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-text-main tnum leading-tight"><?= $tongChuTro ?></p>
+            <p class="text-xs text-text-sub">Chủ trọ xác thực</p>
+          </div>
+        </div>
+        <div class="bg-bg-sub/80 border border-border-warm rounded-card p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-btn bg-status-amber-bg text-status-amber-text flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined">school</span>
+          </div>
+          <div>
+            <p class="text-xl font-bold text-text-main tnum leading-tight"><?= $tongSinhVien ?></p>
+            <p class="text-xs text-text-sub">Sinh viên tham gia</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 pt-6 border-t border-border-warm">
       <h3 class="text-xs font-bold uppercase tracking-wider text-text-sub mb-3">Tiện ích tra cứu bảng tin sinh viên</h3>
       <div class="divide-y divide-border-warm border-y border-border-warm">
         <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="w-full py-3.5 px-2 flex items-center justify-between text-left hover:bg-bg-sub transition-all duration-200 active:scale-[0.98] block">
