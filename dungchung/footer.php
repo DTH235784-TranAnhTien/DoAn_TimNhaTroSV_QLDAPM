@@ -12,7 +12,7 @@
         <div class="space-y-1.5">
           <span class="text-sm font-bold text-text-main block">Danh mục bảng tin</span>
           <ul class="space-y-1">
-            <li><a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-accent">Trang chính (Phòng nổi bật)</a></li>
+            <li><a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-accent">Trang chủ</a></li>
             <li><a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="hover:text-accent">Bản đồ &amp; Toàn bộ phòng trọ</a></li>
             <li><a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="hover:text-accent">Ghép bạn cùng phòng (AGU-Match)</a></li>
             <li><a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" class="hover:text-accent">Tải hợp đồng mẫu &amp; Review</a></li>

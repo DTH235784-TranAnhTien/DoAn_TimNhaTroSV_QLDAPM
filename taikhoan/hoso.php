@@ -102,7 +102,7 @@ include_once __DIR__ . '/../dungchung/header.php';
 
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-1.5 text-xs text-text-sub" aria-label="Breadcrumb">
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-text-main transition-colors">Trang chính</a>
+    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-text-main transition-colors">Trang chủ</a>
     <span class="material-symbols-outlined text-[14px]">chevron_right</span>
     <span class="text-text-main font-semibold">Thông tin cá nhân</span>
   </nav>

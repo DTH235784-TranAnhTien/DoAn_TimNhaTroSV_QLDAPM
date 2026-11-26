@@ -39,22 +39,21 @@ include_once __DIR__ . '/dungchung/header.php';
 
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-1.5 text-xs text-text-sub mb-5">
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-text-main">Trang chinh</a>
-    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="hover:text-text-main">Danh sach phong</a>
-    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-    <span class="text-text-main font-semibold"><?= $phong ? htmlspecialchars($phong['TenPhong']) : 'Phong khong ton tai' ?></span>
+    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-text-main">Trang chủ</a>
+    <span class="text-slate-300">/</span>
+    <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="hover:text-text-main">Danh sách phòng</a>
+    <span class="text-slate-300">/</span>
+    <span class="text-text-main font-semibold"><?= $phong ? htmlspecialchars($phong['TenPhong']) : 'Phòng không tồn tại' ?></span>
   </nav>
 
   <?php if (!$phong): ?>
-  <!-- PHONG KHONG TON TAI -->
+  <!-- PHÒNG KHÔNG TỒN TẠI -->
   <div class="py-20 text-center space-y-4 bg-bg-main rounded-card border border-border-warm border-dashed">
-    <span class="material-symbols-outlined text-5xl text-text-sub block mx-auto">search_off</span>
-    <p class="text-base font-bold text-text-main">Khong tim thay phong nay</p>
-    <p class="text-xs text-text-sub">Phong co the da bi xoa hoac ma phong khong chinh xac.</p>
+    <p class="text-base font-bold text-text-main">Không tìm thấy phòng này</p>
+    <p class="text-xs text-text-sub">Phòng có thể đã bị xóa hoặc mã phòng không chính xác.</p>
     <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php"
        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm">
-      Xem danh sach phong
+      Xem danh sách phòng
     </a>
   </div>
 
