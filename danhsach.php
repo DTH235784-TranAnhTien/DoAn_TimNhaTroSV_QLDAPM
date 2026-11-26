@@ -8,6 +8,7 @@ require_once __DIR__ . '/cauhinh/auth.php';
 $filterCoso      = $_GET['coso']      ?? ($_GET['kv'] ?? '');
 $filterLoaiphong = $_GET['loaiphong'] ?? '';
 $filterGia       = $_GET['ngansach']  ?? ($_GET['gia'] ?? '');
+$filterDientich  = $_GET['dientich']  ?? '';
 $filterTag       = $_GET['tag']       ?? '';
 $filterSapxep    = $_GET['sapxep']    ?? 'moi-nhat';
 $q               = trim($_GET['q']    ?? '');
@@ -56,6 +57,15 @@ if ($filterGia === 'duoi-1m2') {
     $where[] = "p.GiaThue BETWEEN 1200000 AND 1800000";
 } elseif ($filterGia === 'tren-1m8') {
     $where[] = "p.GiaThue > 1800000";
+}
+
+// 4b. Lọc theo diện tích (Thành viên 4)
+if ($filterDientich === 'duoi-15') {
+    $where[] = "p.DienTich > 0 AND p.DienTich < 15";
+} elseif ($filterDientich === '15-25') {
+    $where[] = "p.DienTich BETWEEN 15 AND 25";
+} elseif ($filterDientich === 'tren-25') {
+    $where[] = "p.DienTich > 25";
 }
 
 // 5. Lọc nhanh theo tags
@@ -213,7 +223,7 @@ include_once __DIR__ . '/dungchung/header.php';
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
       
       <!-- 1. Cơ sở học tập / Khu vực -->
-      <div class="md:col-span-3">
+      <div class="md:col-span-2">
         <label class="block text-xs font-semibold text-text-main mb-1">Cơ sở / Khu vực</label>
         <select name="coso" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
           <option value="">Tất cả khu vực quanh AGU</option>
@@ -228,7 +238,7 @@ include_once __DIR__ . '/dungchung/header.php';
       </div>
 
       <!-- 2. Loại phòng -->
-      <div class="md:col-span-3">
+      <div class="md:col-span-2">
         <label class="block text-xs font-semibold text-text-main mb-1">Loại phòng</label>
         <select name="loaiphong" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
           <option value="">Tất cả loại hình phòng</option>
@@ -247,6 +257,17 @@ include_once __DIR__ . '/dungchung/header.php';
           <option value="duoi-1m2" <?= $filterGia==='duoi-1m2'?'selected':'' ?>>Dưới 1.2 triệu</option>
           <option value="1m2-1m8" <?= $filterGia==='1m2-1m8'?'selected':'' ?>>1.2 – 1.8 triệu</option>
           <option value="tren-1m8" <?= $filterGia==='tren-1m8'?'selected':'' ?>>Trên 1.8 triệu</option>
+        </select>
+      </div>
+
+      <!-- 3b. Diện tích -->
+      <div class="md:col-span-2">
+        <label class="block text-xs font-semibold text-text-main mb-1">Diện tích</label>
+        <select name="dientich" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none tnum">
+          <option value="">Mọi diện tích</option>
+          <option value="duoi-15" <?= $filterDientich==='duoi-15'?'selected':'' ?>>Dưới 15 m²</option>
+          <option value="15-25" <?= $filterDientich==='15-25'?'selected':'' ?>>15 – 25 m²</option>
+          <option value="tren-25" <?= $filterDientich==='tren-25'?'selected':'' ?>>Trên 25 m²</option>
         </select>
       </div>
 
@@ -287,7 +308,7 @@ include_once __DIR__ . '/dungchung/header.php';
         Khu trọ nữ riêng
       </a>
 
-      <?php if ($q || $filterCoso || $filterLoaiphong || $filterGia || $filterTag): ?>
+      <?php if ($q || $filterCoso || $filterLoaiphong || $filterGia || $filterDientich || $filterTag): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-3 py-1 rounded-card bg-status-red-bg text-status-red-text border border-status-red-border font-semibold flex items-center gap-1 ml-auto">
         <span class="material-symbols-outlined text-[14px]">close</span>Đặt lại bộ lọc
       </a>
