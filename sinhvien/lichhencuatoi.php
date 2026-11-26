@@ -129,8 +129,7 @@ include_once __DIR__ . '/../dungchung/header.php';
       </p>
     </div>
     <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php"
-       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-btn bg-accent text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98] self-start sm:self-auto">
-      <span class="material-symbols-outlined text-[16px]">search</span>
+       class="inline-flex items-center px-4 py-2 rounded-btn bg-accent text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98] self-start sm:self-auto">
       Tìm phòng mới
     </a>
   </div>
@@ -182,8 +181,7 @@ include_once __DIR__ . '/../dungchung/header.php';
     </p>
     <?php if ($tabHienTai === 'TatCa'): ?>
     <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php"
-       class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-btn bg-accent text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98]">
-      <span class="material-symbols-outlined text-[16px]">search</span>
+       class="inline-flex items-center px-5 py-2.5 rounded-btn bg-accent text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98]">
       Khám phá phòng trọ
     </a>
     <?php endif; ?>

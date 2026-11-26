@@ -55,26 +55,22 @@ include_once __DIR__ . '/dungchung/header.php';
       
       <div class="flex flex-wrap items-center justify-center gap-3">
         <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" 
-           class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-btn bg-accent text-white font-semibold text-xs shadow-sm hover:opacity-95 transition-all">
-          <span class="material-symbols-outlined text-[16px]">home</span>
+           class="inline-flex items-center px-4 py-2.5 rounded-btn bg-accent text-white font-semibold text-xs shadow-sm hover:opacity-95 transition-all">
           Về trang chủ
         </a>
 
         <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" 
-           class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all">
-          <span class="material-symbols-outlined text-[16px]">explore</span>
+           class="inline-flex items-center px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all">
           Bản đồ &amp; Phòng trọ
         </a>
 
         <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" 
-           class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all">
-          <span class="material-symbols-outlined text-[16px]">group_add</span>
+           class="inline-flex items-center px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all">
           Tìm bạn ở ghép
         </a>
 
         <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" 
-           class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all">
-          <span class="material-symbols-outlined text-[16px]">menu_book</span>
+           class="inline-flex items-center px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all">
           Cẩm nang thuê trọ
         </a>
       </div>

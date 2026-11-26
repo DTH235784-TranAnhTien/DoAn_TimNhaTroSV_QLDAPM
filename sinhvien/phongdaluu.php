@@ -82,8 +82,7 @@ include_once __DIR__ . '/../dungchung/header.php';
       </p>
     </div>
     <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php"
-       class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-btn bg-accent text-white text-xs font-semibold transition-all duration-200 active:scale-[0.98] self-start sm:self-auto">
-      <span class="material-symbols-outlined" style="font-size:16px">search</span>
+       class="inline-flex items-center px-4 py-2.5 rounded-btn bg-accent text-white text-xs font-semibold transition-all duration-200 active:scale-[0.98] self-start sm:self-auto">
       Tìm thêm phòng
     </a>
   </div>
@@ -91,18 +90,14 @@ include_once __DIR__ . '/../dungchung/header.php';
   <?php if (empty($dsPhong)): ?>
   <!-- ── Empty state ──────────────────────────────────────────────────────── -->
   <div class="flex flex-col items-center justify-center py-20 text-center gap-5">
-    <div class="w-20 h-20 rounded-full bg-bg-sub border border-border-warm flex items-center justify-center">
-      <span class="material-symbols-outlined text-text-sub" style="font-size:40px">bookmark_add</span>
-    </div>
     <div class="space-y-2 max-w-xs">
       <p class="text-base font-semibold text-text-main">Chưa có phòng nào được lưu</p>
       <p class="text-sm text-text-sub leading-relaxed">
-        Hãy khám phá danh sách phòng trọ và nhấn ❤ để lưu những phòng ưng ý — bạn có thể xem lại bất cứ lúc nào tại đây.
+        Hãy khám phá danh sách phòng trọ và nhấn lưu những phòng ưng ý — bạn có thể xem lại bất cứ lúc nào tại đây.
       </p>
     </div>
     <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php"
-       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98]">
-      <span class="material-symbols-outlined" style="font-size:18px">apartment</span>
+       class="inline-flex items-center px-5 py-2.5 rounded-btn bg-accent text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98]">
       Khám phá danh sách phòng trọ
     </a>
   </div>
