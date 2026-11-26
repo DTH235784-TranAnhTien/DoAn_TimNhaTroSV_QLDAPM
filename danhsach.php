@@ -101,6 +101,13 @@ if (!empty($params)) {
 $dsPhong = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $tongPhong = count($dsPhong);
 
+// Phân trang danh sách phòng (Thành viên 4)
+$soPhongMoiTrang = 6;
+$tongTrang = max(1, (int)ceil($tongPhong / $soPhongMoiTrang));
+$trangSo = max(1, min($tongTrang, (int)($_GET['trang'] ?? 1)));
+$viTriBatDau = ($trangSo - 1) * $soPhongMoiTrang;
+$dsPhongHienThi = array_slice($dsPhong, $viTriBatDau, $soPhongMoiTrang);
+
 // KPI tổng phòng đã duyệt trên toàn hệ thống
 $kpiTong = (int)($conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'DaDuyet' AND TrangThai = 'ConPhong'")->fetch_assoc()['c'] ?? 0);
 
@@ -323,11 +330,14 @@ include_once __DIR__ . '/dungchung/header.php';
       <div class="flex items-center justify-between gap-3 text-xs bg-bg-main p-3 rounded-card border border-border-warm shadow-sm">
         <span class="font-bold text-text-main flex items-center gap-1.5">
           <span class="material-symbols-outlined text-accent text-[18px]">real_estate_agent</span>
-          Tìm thấy <span class="text-accent tnum font-semibold"><?= count($dsPhong) ?></span> phòng trọ
+          Tìm thấy <span class="text-accent tnum font-semibold"><?= $tongPhong ?></span> phòng trọ
+          <?php if ($tongTrang > 1): ?>
+          <span class="text-text-sub font-normal tnum">(Trang <?= $trangSo ?>/<?= $tongTrang ?>)</span>
+          <?php endif; ?>
         </span>
         <div class="flex items-center gap-2">
           <label for="sort-select" class="text-text-sub font-medium shrink-0">Sắp xếp:</label>
-          <select id="sort-select" onchange="const u = new URL(window.location.href); u.searchParams.set('sapxep', this.value); window.location.href = u.toString();" 
+          <select id="sort-select" onchange="const u = new URL(window.location.href); u.searchParams.set('sapxep', this.value); u.searchParams.delete('trang'); window.location.href = u.toString();" 
                   class="bg-bg-sub border border-border-warm text-text-main rounded-btn px-2.5 py-1 text-xs focus:outline-none focus:border-accent cursor-pointer font-medium">
             <option value="moi-nhat" <?= $filterSapxep === 'moi-nhat' ? 'selected' : '' ?>>Mới nhất</option>
             <option value="gia-tang" <?= $filterSapxep === 'gia-tang' ? 'selected' : '' ?>>Giá tăng dần</option>
@@ -338,7 +348,7 @@ include_once __DIR__ . '/dungchung/header.php';
 
       <!-- DANH SÁCH PHÒNG THỰC TỪ DATABASE -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <?php foreach ($dsPhong as $p):
+        <?php foreach ($dsPhongHienThi as $p):
           $gia    = number_format($p['GiaThue'], 0, ',', '.');
           $dien   = $p['DienTich'] ? $p['DienTich'] . ' m²' : '—';
           $diachi = $p['DiaChi'] ?? '—';
@@ -417,6 +427,38 @@ include_once __DIR__ . '/dungchung/header.php';
         </article>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($tongTrang > 1):
+        $queryBase = $_GET;
+        $buildPageUrl = function (int $p) use ($queryBase): string {
+            $queryBase['trang'] = $p;
+            return '/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?' . http_build_query($queryBase);
+        };
+      ?>
+      <!-- PHÂN TRANG (Thành viên 4) -->
+      <nav aria-label="Phân trang danh sách phòng" class="flex flex-wrap items-center justify-center gap-1.5 pt-2">
+        <?php if ($trangSo > 1): ?>
+        <a href="<?= htmlspecialchars($buildPageUrl($trangSo - 1)) ?>"
+           class="px-3 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main text-xs font-semibold card-hover inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[15px]">chevron_left</span>Trước
+        </a>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $tongTrang; $i++): ?>
+        <a href="<?= htmlspecialchars($buildPageUrl($i)) ?>"
+           class="w-8 h-8 rounded-btn text-xs font-semibold inline-flex items-center justify-center transition-all tnum <?= $i === $trangSo ? 'bg-accent text-white shadow-sm' : 'border border-border-warm bg-bg-main text-text-main card-hover' ?>">
+          <?= $i ?>
+        </a>
+        <?php endfor; ?>
+
+        <?php if ($trangSo < $tongTrang): ?>
+        <a href="<?= htmlspecialchars($buildPageUrl($trangSo + 1)) ?>"
+           class="px-3 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main text-xs font-semibold card-hover inline-flex items-center gap-1">
+          Sau<span class="material-symbols-outlined text-[15px]">chevron_right</span>
+        </a>
+        <?php endif; ?>
+      </nav>
+      <?php endif; ?>
       <?php endif; ?>
     </div>
 
