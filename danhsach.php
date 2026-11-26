@@ -119,7 +119,8 @@ $viTriBatDau = ($trangSo - 1) * $soPhongMoiTrang;
 $dsPhongHienThi = array_slice($dsPhong, $viTriBatDau, $soPhongMoiTrang);
 
 // KPI tổng phòng đã duyệt trên toàn hệ thống
-$kpiTong = (int)($conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'DaDuyet' AND TrangThai = 'ConPhong'")->fetch_assoc()['c'] ?? 0);
+$resKpi = $conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'DaDuyet' AND TrangThai = 'ConPhong'");
+$kpiTong = $resKpi ? (int)($resKpi->fetch_assoc()['c'] ?? 0) : 0;
 
 // Danh sách phòng đã lưu của sinh viên (nếu đã đăng nhập)
 $phongDaLuuIds = [];
