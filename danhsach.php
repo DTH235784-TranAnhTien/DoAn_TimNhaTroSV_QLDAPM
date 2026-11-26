@@ -149,44 +149,59 @@ include_once __DIR__ . '/dungchung/header.php';
 <style>
   /* Tùy chỉnh marker & popup bản đồ Leaflet */
   .leaflet-popup-content-wrapper {
-    background-color: #F7F5F0;
-    color: #1E1B16;
-    border-radius: 8px;
-    border: 1px solid #DDD6C9;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border-radius: 12px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     font-family: 'Be Vietnam Pro', sans-serif;
   }
   .leaflet-popup-tip {
-    background-color: #F7F5F0;
+    background-color: #FFFFFF;
   }
   .custom-room-pin {
-    display: flex;
+    position: relative;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: #00685F;
+    background-color: #2563EB;
     color: #FFFFFF;
     font-weight: 700;
-    font-size: 11px;
-    padding: 3px 6px;
-    border-radius: 9999px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    border: 2px solid #FFFFFF;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
     white-space: nowrap;
     cursor: pointer;
-    transition: transform 0.15s ease;
+    transition: transform 0.15s ease, background-color 0.15s ease;
+  }
+  .custom-room-pin::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #2563EB;
+    transition: border-top-color 0.15s ease;
   }
   .custom-room-pin:hover {
     transform: scale(1.1);
-    background-color: #004d46;
+    background-color: #1D4ED8;
+    z-index: 999 !important;
+  }
+  .custom-room-pin:hover::after {
+    border-top-color: #1D4ED8;
   }
   .custom-school-pin {
-    background-color: #A84232;
+    background-color: #0F172A;
     color: #FFFFFF;
     font-weight: 700;
     font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    padding: 4px 9px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
     border: 2px solid #FFFFFF;
     display: flex;
     align-items: center;
@@ -195,139 +210,122 @@ include_once __DIR__ . '/dungchung/header.php';
   }
 </style>
 
-<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
 
-  <!-- Header tiêu đề trang -->
-  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-    <div>
-      <h1 class="font-serif text-2xl sm:text-3xl font-bold text-text-main">Bản đồ &amp; Danh sách nhà trọ ĐH An Giang</h1>
-      <p class="text-xs sm:text-sm text-text-sub mt-1 tnum">
-        <?php if ($tongPhong > 0): ?>
-          Hiển thị <strong><?= $tongPhong ?></strong> phòng trọ phù hợp (Tổng <?= $kpiTong ?> phòng còn trống trên hệ thống)
-        <?php else: ?>
-          Chưa tìm thấy phòng trọ phù hợp với tiêu chí lọc của bạn
-        <?php endif; ?>
-      </p>
-    </div>
-
-    <!-- Nút Bật / Tắt Bản đồ Thực tế -->
-    <button type="button" onclick="toggleExploreMap()"
-      class="px-4 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover flex items-center gap-2 self-start sm:self-auto shadow-sm transition-all duration-200 active:scale-[0.98]">
-      <span class="material-symbols-outlined text-accent">map</span>
-      <span id="btn-toggle-map-text">Bật / Tắt Bản đồ</span>
-    </button>
-  </div>
-
-  <!-- ================= BỘ LỌC VÀ THANH TÌM KIẾM CŨ ĐẦY ĐỦ ================= -->
-  <form action="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" method="GET" class="bg-bg-sub p-4 sm:p-5 rounded-card border border-border-warm shadow-sm space-y-3">
-    <!-- Hàng tìm kiếm chính -->
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-      
-      <!-- 1. Cơ sở học tập / Khu vực -->
-      <div class="md:col-span-2">
-        <label class="block text-xs font-semibold text-text-main mb-1">Cơ sở / Khu vực</label>
-        <select name="coso" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
-          <option value="">Tất cả khu vực quanh AGU</option>
-          <option value="khu-a" <?= $filterCoso==='khu-a'?'selected':'' ?>>Khu A — 18 Ung Văn Khiêm (P. Đông Xuyên)</option>
-          <option value="khu-b" <?= $filterCoso==='khu-b'?'selected':'' ?>>Khu B — 25 Võ Thị Sáu (P. Mỹ Xuyên)</option>
-          <option value="ktx" <?= $filterCoso==='ktx'?'selected':'' ?>>Ký túc xá AGU (Đông Xuyên)</option>
-          <option value="dinh-my" <?= $filterCoso==='dinh-my'?'selected':'' ?>>Cơ sở Định Mỹ (Thoại Sơn)</option>
-          <option value="Dong Xuyen" <?= $filterCoso==='Dong Xuyen'?'selected':'' ?>>P. Đông Xuyên</option>
-          <option value="My Xuyen" <?= $filterCoso==='My Xuyen'?'selected':'' ?>>P. Mỹ Xuyên</option>
-          <option value="Binh Khanh" <?= $filterCoso==='Binh Khanh'?'selected':'' ?>>P. Bình Khánh</option>
-        </select>
-      </div>
-
-      <!-- 2. Loại phòng -->
-      <div class="md:col-span-2">
-        <label class="block text-xs font-semibold text-text-main mb-1">Loại phòng</label>
-        <select name="loaiphong" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
-          <option value="">Tất cả loại hình phòng</option>
-          <option value="gac-duc" <?= $filterLoaiphong==='gac-duc'?'selected':'' ?>>Phòng trọ có gác đúc kiên cố</option>
-          <option value="khep-kin" <?= $filterLoaiphong==='khep-kin'?'selected':'' ?>>Phòng trọ khép kín (WC riêng)</option>
-          <option value="ktx-tu-nhan" <?= $filterLoaiphong==='ktx-tu-nhan'?'selected':'' ?>>Ký túc xá tư nhân / Phòng ghép</option>
-          <option value="studio" <?= $filterLoaiphong==='studio'?'selected':'' ?>>Phòng rộng có ban công / Studio</option>
-        </select>
-      </div>
-
-      <!-- 3. Mức giá / Ngân sách -->
-      <div class="md:col-span-2">
-        <label class="block text-xs font-semibold text-text-main mb-1">Mức giá</label>
-        <select name="ngansach" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none tnum">
-          <option value="">Mọi mức giá</option>
-          <option value="duoi-1m2" <?= $filterGia==='duoi-1m2'?'selected':'' ?>>Dưới 1.2 triệu</option>
-          <option value="1m2-1m8" <?= $filterGia==='1m2-1m8'?'selected':'' ?>>1.2 – 1.8 triệu</option>
-          <option value="tren-1m8" <?= $filterGia==='tren-1m8'?'selected':'' ?>>Trên 1.8 triệu</option>
-        </select>
-      </div>
-
-      <!-- 3b. Diện tích -->
-      <div class="md:col-span-2">
-        <label class="block text-xs font-semibold text-text-main mb-1">Diện tích</label>
-        <select name="dientich" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none tnum">
-          <option value="">Mọi diện tích</option>
-          <option value="duoi-15" <?= $filterDientich==='duoi-15'?'selected':'' ?>>Dưới 15 m²</option>
-          <option value="15-25" <?= $filterDientich==='15-25'?'selected':'' ?>>15 – 25 m²</option>
-          <option value="tren-25" <?= $filterDientich==='tren-25'?'selected':'' ?>>Trên 25 m²</option>
-        </select>
-      </div>
-
-      <!-- 4. Ô tìm kiếm từ khóa -->
-      <div class="md:col-span-3">
-        <label class="block text-xs font-semibold text-text-main mb-1">Tìm từ khóa</label>
-        <input name="q" type="search" value="<?= htmlspecialchars($q) ?>"
-               placeholder="Tên phòng, hẻm, đường..."
-               class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
-      </div>
-
-      <!-- 5. Nút submit -->
-      <div class="md:col-span-1">
-        <button type="submit" class="w-full h-[42px] bg-accent text-white font-semibold text-sm rounded-btn flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98]">
-          <span class="material-symbols-outlined text-[18px]">search</span>
-          <span class="hidden md:inline">Tìm</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Dải lọc nhanh (Quick filters) -->
-    <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-border-warm text-xs">
-      <span class="text-text-sub font-semibold">Lọc nhanh:</span>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=gan-truong"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='gan-truong'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        Cách cổng trường &lt; 500m
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=tu-do"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='tu-do'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        Giờ giấc tự do 24/7
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=may-lanh"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='may-lanh'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        Có máy lạnh
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?tag=nu-rieng"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='nu-rieng'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        Khu trọ nữ riêng
-      </a>
-
-      <?php if ($q || $filterCoso || $filterLoaiphong || $filterGia || $filterDientich || $filterTag): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-3 py-1 rounded-card bg-status-red-bg text-status-red-text border border-status-red-border font-semibold flex items-center gap-1 ml-auto">
-        <span class="material-symbols-outlined text-[14px]">close</span>Đặt lại bộ lọc
-      </a>
-      <?php else: ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="ml-auto text-accent font-semibold underline">Tìm bạn ở ghép bằng AI →</a>
-      <?php endif; ?>
-    </div>
-  </form>
-
-  <!-- ================= BỐ CỤC 2 CỘT: DANH SÁCH + BẢN ĐỒ THỰC TẾ ================= -->
+  <!-- ================= BỐ CỤC 2 CỘT CHUẨN ẢNH MẪU: TRÁI DANH SÁCH + PHẢI BẢN ĐỒ ================= -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-    <!-- CỘT TRÁI: DANH SÁCH PHÒNG TRỌ (lg:col-span-7 khi mở map, lg:col-span-12 khi đóng map) -->
-    <div id="explore-list-col" class="lg:col-span-7 space-y-5">
+    <!-- CỘT TRÁI: TIÊU ĐỀ, NÚT LỌC PILL, DANH SÁCH PHÒNG (lg:col-span-6) -->
+    <div id="explore-list-col" class="lg:col-span-6 space-y-4">
+
+      <!-- Hàng tiêu đề + Toggle Ở ghép (giống hệt ảnh mẫu) -->
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-text-main tracking-tight">Phòng trọ quanh ĐH An Giang</h1>
+          <p class="text-xs text-text-sub mt-0.5 tnum">
+            <?= $tongPhong ?> kết quả · <?= $kpiTong ?> phòng trống quanh AGU
+            <?php if ($tongTrang > 1): ?> · Trang <?= $trangSo ?>/<?= $tongTrang ?><?php endif; ?>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 shrink-0 pt-0.5">
+          <!-- Toggle Ở ghép (giống toggle Roommates màu xanh) -->
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="flex items-center gap-2 text-xs font-semibold text-text-main hover:text-accent transition-colors" title="Chuyển sang tìm bạn ở ghép">
+            <span>Ở ghép</span>
+            <span class="w-10 h-5 bg-accent rounded-full p-0.5 flex items-center justify-end transition-all shadow-inner">
+              <span class="w-4 h-4 bg-white rounded-full shadow-sm"></span>
+            </span>
+          </a>
+          <button type="button" onclick="toggleExploreMap()" class="lg:hidden px-2.5 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main text-xs font-semibold flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-accent">map</span>
+            <span id="btn-toggle-map-text">Bản đồ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hàng nút lọc Pill + View Switcher + Sắp xếp (giống ảnh mẫu) -->
+      <form action="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" method="GET" class="flex flex-wrap items-center justify-between gap-2 pb-1">
+        <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>"><?php endif; ?>
+        <?php if ($filterTag !== ''): ?><input type="hidden" name="tag" value="<?= htmlspecialchars($filterTag) ?>"><?php endif; ?>
+
+        <div class="flex flex-wrap items-center gap-1.5">
+          <!-- Nút lọc Mức giá -->
+          <label class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-btn border <?= $filterGia ? 'border-accent bg-status-green-bg text-accent' : 'border-border-warm bg-bg-main text-text-main hover:border-slate-300' ?> text-xs font-medium cursor-pointer transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <span class="material-symbols-outlined text-[15px] text-text-sub">sell</span>
+            <select name="ngansach" onchange="this.form.submit()" class="bg-transparent focus:outline-none cursor-pointer font-medium pr-1">
+              <option value="">Mức giá</option>
+              <option value="duoi-1m2" <?= $filterGia==='duoi-1m2'?'selected':'' ?>>&lt; 1.2 triệu</option>
+              <option value="1m2-1m8" <?= $filterGia==='1m2-1m8'?'selected':'' ?>>1.2 – 1.8tr</option>
+              <option value="tren-1m8" <?= $filterGia==='tren-1m8'?'selected':'' ?>>&gt; 1.8 triệu</option>
+            </select>
+          </label>
+
+          <!-- Nút lọc Loại phòng -->
+          <label class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-btn border <?= $filterLoaiphong ? 'border-accent bg-status-green-bg text-accent' : 'border-border-warm bg-bg-main text-text-main hover:border-slate-300' ?> text-xs font-medium cursor-pointer transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <span class="material-symbols-outlined text-[15px] text-text-sub">apartment</span>
+            <select name="loaiphong" onchange="this.form.submit()" class="bg-transparent focus:outline-none cursor-pointer font-medium pr-1">
+              <option value="">Loại phòng</option>
+              <option value="gac-duc" <?= $filterLoaiphong==='gac-duc'?'selected':'' ?>>Gác đúc</option>
+              <option value="khep-kin" <?= $filterLoaiphong==='khep-kin'?'selected':'' ?>>Khép kín</option>
+              <option value="ktx-tu-nhan" <?= $filterLoaiphong==='ktx-tu-nhan'?'selected':'' ?>>KTX / Ghép</option>
+              <option value="studio" <?= $filterLoaiphong==='studio'?'selected':'' ?>>Studio</option>
+            </select>
+          </label>
+
+          <!-- Nút lọc Diện tích -->
+          <label class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-btn border <?= $filterDientich ? 'border-accent bg-status-green-bg text-accent' : 'border-border-warm bg-bg-main text-text-main hover:border-slate-300' ?> text-xs font-medium cursor-pointer transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <span class="material-symbols-outlined text-[15px] text-text-sub">square_foot</span>
+            <select name="dientich" onchange="this.form.submit()" class="bg-transparent focus:outline-none cursor-pointer font-medium pr-1">
+              <option value="">Diện tích</option>
+              <option value="duoi-15" <?= $filterDientich==='duoi-15'?'selected':'' ?>>&lt; 15 m²</option>
+              <option value="15-25" <?= $filterDientich==='15-25'?'selected':'' ?>>15 – 25 m²</option>
+              <option value="tren-25" <?= $filterDientich==='tren-25'?'selected':'' ?>>&gt; 25 m²</option>
+            </select>
+          </label>
+
+          <!-- Nút lọc Khu vực -->
+          <label class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-btn border <?= $filterCoso ? 'border-accent bg-status-green-bg text-accent' : 'border-border-warm bg-bg-main text-text-main hover:border-slate-300' ?> text-xs font-medium cursor-pointer transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <span class="material-symbols-outlined text-[15px] text-text-sub">tune</span>
+            <select name="coso" onchange="this.form.submit()" class="bg-transparent focus:outline-none cursor-pointer font-medium pr-1">
+              <option value="">Khu vực</option>
+              <option value="khu-a" <?= $filterCoso==='khu-a'?'selected':'' ?>>Khu A (Đông Xuyên)</option>
+              <option value="khu-b" <?= $filterCoso==='khu-b'?'selected':'' ?>>Khu B (Mỹ Xuyên)</option>
+              <option value="ktx" <?= $filterCoso==='ktx'?'selected':'' ?>>Ký túc xá AGU</option>
+              <option value="Binh Khanh" <?= $filterCoso==='Binh Khanh'?'selected':'' ?>>P. Bình Khánh</option>
+            </select>
+          </label>
+
+          <?php if ($q || $filterCoso || $filterLoaiphong || $filterGia || $filterDientich || $filterTag): ?>
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-btn bg-status-red-bg text-status-red-text border border-status-red-border text-xs font-semibold">
+            <span class="material-symbols-outlined text-[14px]">close</span>Đặt lại
+          </a>
+          <?php endif; ?>
+        </div>
+
+        <!-- View Mode & Sort By (bên phải giống ảnh mẫu) -->
+        <div class="flex items-center gap-2.5 ml-auto text-xs">
+          <div class="hidden sm:flex items-center gap-1 border-r border-border-warm pr-2.5">
+            <button type="button" id="btn-view-grid" onclick="setListViewMode('grid')" title="Xem dạng lưới" class="p-1 rounded text-text-sub hover:text-text-main transition-colors">
+              <span class="material-symbols-outlined text-[18px]">grid_view</span>
+            </button>
+            <button type="button" id="btn-view-list" onclick="setListViewMode('list')" title="Xem dạng danh sách" class="p-1 rounded text-accent transition-colors">
+              <span class="material-symbols-outlined text-[18px]">view_list</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-text-sub">Sắp xếp:</span>
+            <select name="sapxep" onchange="this.form.submit()" class="bg-transparent text-accent font-semibold focus:outline-none cursor-pointer">
+              <option value="moi-nhat" <?= $filterSapxep === 'moi-nhat' ? 'selected' : '' ?>>Mới nhất</option>
+              <option value="gia-tang" <?= $filterSapxep === 'gia-tang' ? 'selected' : '' ?>>Giá tăng</option>
+              <option value="gia-giam" <?= $filterSapxep === 'gia-giam' ? 'selected' : '' ?>>Giá giảm</option>
+            </select>
+          </div>
+        </div>
+      </form>
 
       <?php if (empty($dsPhong)): ?>
       <!-- EMPTY STATE KHI KHÔNG CÓ PHÒNG PHÙ HỢP -->
-      <div class="py-20 text-center space-y-4 bg-bg-main rounded-card border border-border-warm border-dashed">
+      <div class="py-20 text-center space-y-4 bg-bg-main rounded-2xl border border-border-warm border-dashed">
         <span class="material-symbols-outlined text-5xl text-text-sub block mx-auto">search_off</span>
         <div>
           <p class="text-base font-bold text-text-main">Không tìm thấy phòng trọ phù hợp</p>
@@ -348,28 +346,8 @@ include_once __DIR__ . '/dungchung/header.php';
       </div>
 
       <?php else: ?>
-      <!-- THANH HIỂN THỊ KẾT QUẢ VÀ SẮP XẾP (Thành viên 4) -->
-      <div class="flex items-center justify-between gap-3 text-xs bg-bg-main p-3 rounded-card border border-border-warm shadow-sm">
-        <span class="font-bold text-text-main flex items-center gap-1.5">
-          <span class="material-symbols-outlined text-accent text-[18px]">real_estate_agent</span>
-          Tìm thấy <span class="text-accent tnum font-semibold"><?= $tongPhong ?></span> phòng trọ
-          <?php if ($tongTrang > 1): ?>
-          <span class="text-text-sub font-normal tnum">(Trang <?= $trangSo ?>/<?= $tongTrang ?>)</span>
-          <?php endif; ?>
-        </span>
-        <div class="flex items-center gap-2">
-          <label for="sort-select" class="text-text-sub font-medium shrink-0">Sắp xếp:</label>
-          <select id="sort-select" onchange="const u = new URL(window.location.href); u.searchParams.set('sapxep', this.value); u.searchParams.delete('trang'); window.location.href = u.toString();" 
-                  class="bg-bg-sub border border-border-warm text-text-main rounded-btn px-2.5 py-1 text-xs focus:outline-none focus:border-accent cursor-pointer font-medium">
-            <option value="moi-nhat" <?= $filterSapxep === 'moi-nhat' ? 'selected' : '' ?>>Mới nhất</option>
-            <option value="gia-tang" <?= $filterSapxep === 'gia-tang' ? 'selected' : '' ?>>Giá tăng dần</option>
-            <option value="gia-giam" <?= $filterSapxep === 'gia-giam' ? 'selected' : '' ?>>Giá giảm dần</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- DANH SÁCH PHÒNG THỰC TỪ DATABASE -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- DANH SÁCH PHÒNG THỰC TỪ DATABASE (Card ngang hiện đại giống ảnh mẫu) -->
+      <div id="room-list-grid" class="grid grid-cols-1 gap-3.5">
         <?php foreach ($dsPhongHienThi as $p):
           $gia    = number_format($p['GiaThue'], 0, ',', '.');
           $dien   = $p['DienTich'] ? $p['DienTich'] . ' m²' : '—';
@@ -377,73 +355,96 @@ include_once __DIR__ . '/dungchung/header.php';
           $anh    = $p['AnhChinh'] ?: '';
           $sdt    = $p['SoDienThoai'] ?? '';
           $ngay   = $p['NgayDang'] ? date('d/m/Y', strtotime($p['NgayDang'])) : '—';
+          $mota   = trim(strip_tags($p['MoTa'] ?? ''));
+          $daLuu  = in_array((int)$p['MaPhong'], $phongDaLuuIds, true);
         ?>
-        <article class="bg-bg-main rounded-card border border-border-warm card-hover overflow-hidden flex flex-col group cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+        <article class="bg-bg-main rounded-2xl border border-border-warm card-hover p-3.5 flex flex-col sm:flex-row gap-4 group cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md"
                  onclick="focusRoomOnMap(<?= $p['MaPhong'] ?>)">
-          <!-- Ảnh đại diện -->
-          <div class="relative overflow-hidden aspect-[16/10] bg-bg-sub">
+          <!-- Ảnh đại diện bên trái -->
+          <div class="relative overflow-hidden w-full sm:w-48 h-44 sm:h-40 rounded-xl bg-bg-sub shrink-0">
             <?php if ($anh): ?>
             <img loading="lazy" src="<?= htmlspecialchars($anh) ?>" alt="<?= htmlspecialchars($p['TenPhong']) ?>"
                  onerror="this.style.display='none'"
-                 class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]">
+                 class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.04]">
             <?php else: ?>
             <div class="w-full h-full flex items-center justify-center text-text-sub">
               <span class="material-symbols-outlined text-4xl">image_not_supported</span>
             </div>
             <?php endif; ?>
-            <span class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold inline-flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>Còn phòng
-            </span>
-            <?php if ((float)$p['GiaThue'] <= 1300000): ?>
-            <span class="absolute top-2.5 left-28 px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-[10px] font-bold inline-flex items-center gap-1 border border-border-warm/60">
-              <span class="material-symbols-outlined text-[12px]">local_fire_department</span>Giá tốt SV
-            </span>
-            <?php endif; ?>
-            <!-- Nút Lưu yêu thích (AJAX) -->
-            <?php $daLuu = in_array((int)$p['MaPhong'], $phongDaLuuIds, true); ?>
-            <button type="button" 
-                    onclick="event.stopPropagation(); toggleYeuThich(<?= (int)$p['MaPhong'] ?>, this)"
-                    title="<?= $daLuu ? 'Bỏ lưu phòng' : 'Lưu vào phòng yêu thích' ?>"
-                    class="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/80 hover:bg-white text-text-sub backdrop-blur-sm flex items-center justify-center transition-all duration-200 shadow-sm z-10">
-              <span class="material-symbols-outlined text-[19px] <?= $daLuu ? 'text-red-500 fill-1' : 'text-text-sub' ?>">
-                <?= $daLuu ? 'favorite' : 'favorite_border' ?>
+            <!-- Overlay trạng thái & diện tích phía dưới ảnh -->
+            <div class="absolute bottom-2 left-2 right-2 px-2.5 py-1 rounded-lg bg-slate-900/65 backdrop-blur-sm text-white text-[11px] flex items-center justify-between">
+              <span class="font-semibold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Còn phòng
               </span>
-            </button>
-            <span class="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded bg-black/60 text-white text-[10px] font-semibold flex items-center gap-1 backdrop-blur-sm">
-              <span class="material-symbols-outlined text-[13px]">location_on</span>Bấm định vị
-            </span>
+              <span class="tnum opacity-90"><?= $dien ?></span>
+            </div>
           </div>
 
-          <!-- Chi tiết phòng -->
-          <div class="p-4 flex flex-col gap-2 flex-1">
-            <div class="flex items-baseline justify-between">
-              <span class="text-base font-bold text-text-main tnum"><?= $gia ?> đ/tháng</span>
-              <span class="text-xs text-text-sub tnum"><?= $dien ?></span>
+          <!-- Thông tin chi tiết bên phải -->
+          <div class="flex-1 min-w-0 flex flex-col justify-between gap-2">
+            <div>
+              <!-- Dòng tiêu đề + Nút Yêu thích -->
+              <div class="flex items-start justify-between gap-2">
+                <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=<?= $p['MaPhong'] ?>" class="min-w-0 flex-1" onclick="event.stopPropagation()">
+                  <h2 class="text-base font-bold text-text-main group-hover:text-accent transition-colors line-clamp-1"><?= htmlspecialchars($p['TenPhong']) ?></h2>
+                </a>
+                <button type="button"
+                        onclick="event.stopPropagation(); toggleYeuThich(<?= (int)$p['MaPhong'] ?>, this)"
+                        title="<?= $daLuu ? 'Bỏ lưu phòng' : 'Lưu vào phòng yêu thích' ?>"
+                        class="w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition-colors shrink-0 -mt-1 -mr-1">
+                  <span class="material-symbols-outlined text-[20px] <?= $daLuu ? 'text-red-500 fill-1' : 'text-text-sub' ?>">
+                    <?= $daLuu ? 'favorite' : 'favorite_border' ?>
+                  </span>
+                </button>
+              </div>
+
+              <!-- Địa chỉ -->
+              <p class="text-xs text-text-sub flex items-center gap-1 mt-0.5 line-clamp-1">
+                <span class="material-symbols-outlined text-[14px] shrink-0">location_on</span>
+                <span class="truncate"><?= htmlspecialchars($diachi) ?></span>
+              </p>
+
+              <!-- Mô tả / Tiện ích -->
+              <p class="text-xs text-text-sub mt-1.5 line-clamp-2 leading-relaxed">
+                <?= $mota ? htmlspecialchars($mota) : 'Chủ trọ: ' . htmlspecialchars($p['TenChuTro']) . ' · Đăng ngày ' . $ngay ?>
+              </p>
+
+              <!-- Nhãn pill mềm (giống ảnh mẫu) -->
+              <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                <span class="px-2 py-0.5 rounded-md bg-status-green-bg text-status-green-text text-[11px] font-semibold">
+                  Đã kiểm duyệt
+                </span>
+                <?php if ((float)$p['GiaThue'] <= 1300000): ?>
+                <span class="px-2 py-0.5 rounded-md bg-status-amber-bg text-status-amber-text text-[11px] font-semibold">
+                  Giá tốt sinh viên
+                </span>
+                <?php endif; ?>
+                <span class="px-2 py-0.5 rounded-md bg-slate-100 text-text-sub text-[11px] font-medium">
+                  Chủ: <?= htmlspecialchars($p['TenChuTro']) ?>
+                </span>
+              </div>
             </div>
 
-            <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=<?= $p['MaPhong'] ?>" class="group-hover:text-accent transition-colors" onclick="event.stopPropagation()">
-              <h2 class="text-sm font-bold text-text-main line-clamp-1"><?= htmlspecialchars($p['TenPhong']) ?></h2>
-            </a>
-
-            <p class="text-xs text-text-sub line-clamp-2"><?= htmlspecialchars($diachi) ?></p>
-            <p class="text-xs text-text-sub tnum">Chủ trọ: <?= htmlspecialchars($p['TenChuTro']) ?> · <?= $ngay ?></p>
-
-            <div class="flex items-center gap-2 pt-2 border-t border-border-warm mt-auto" onclick="event.stopPropagation()">
-              <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=<?= $p['MaPhong'] ?>"
-                 class="w-1/2 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover text-center">
-                Chi tiết
-              </a>
-              <?php if ($sdt): ?>
-              <a href="tel:<?= htmlspecialchars($sdt) ?>"
-                 class="w-1/2 py-2 rounded-btn bg-accent text-white font-semibold text-xs text-center flex items-center justify-center gap-1">
-                <span class="material-symbols-outlined text-sm">call</span>Gọi chủ trọ
-              </a>
-              <?php else: ?>
-              <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=<?= $p['MaPhong'] ?>"
-                 class="w-1/2 py-2 rounded-btn bg-accent text-white font-semibold text-xs text-center">
-                Liên hệ
-              </a>
-              <?php endif; ?>
+            <!-- Hàng dưới: Đánh giá sao + Giá tiền nổi bật -->
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 mt-1" onclick="event.stopPropagation()">
+              <div class="flex items-center gap-2">
+                <div class="flex items-center gap-0.5 text-accent">
+                  <span class="text-xs font-bold text-text-main mr-1 tnum">5.0</span>
+                  <span class="material-symbols-outlined text-[14px]">star</span>
+                  <span class="material-symbols-outlined text-[14px]">star</span>
+                  <span class="material-symbols-outlined text-[14px]">star</span>
+                  <span class="material-symbols-outlined text-[14px]">star</span>
+                  <span class="material-symbols-outlined text-[14px]">star</span>
+                </div>
+                <a href="/DoAn_TimNhaTroSV_QLDAPM/chitiet.php?id=<?= $p['MaPhong'] ?>"
+                   class="text-xs font-semibold text-accent hover:underline ml-1">
+                  Chi tiết →
+                </a>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="text-lg font-bold text-text-main tnum"><?= $gia ?>đ</span>
+                <span class="text-xs text-text-sub">/tháng</span>
+              </div>
             </div>
           </div>
         </article>
@@ -484,46 +485,31 @@ include_once __DIR__ . '/dungchung/header.php';
       <?php endif; ?>
     </div>
 
-    <!-- CỘT PHẢI: BẢN ĐỒ THỰC TẾ (Leaflet.js + OpenStreetMap - TP. Long Xuyên) -->
-    <aside id="explore-map-panel" class="lg:col-span-5 lg:sticky lg:top-20 space-y-3">
-      <div class="bg-bg-main rounded-card border border-border-warm p-4 shadow-sm space-y-3">
-        <!-- Map header toolbar -->
-        <div class="flex items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-bold text-text-main flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-accent text-[18px]">explore</span>Bản đồ thực tế TP. Long Xuyên
-            </h2>
-            <p class="text-xs text-text-sub mt-0.5">Dữ liệu địa lý vệ tinh &amp; giao thông ĐH An Giang</p>
-          </div>
-          <span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent text-[10px] font-semibold inline-flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>Trực quan
-          </span>
+    <!-- CỘT PHẢI: BẢN ĐỒ THỰC TẾ TRÀN VIỀN GIỐNG ẢNH MẪU (lg:col-span-6) -->
+    <aside id="explore-map-panel" class="lg:col-span-6 lg:sticky lg:top-20">
+      <div class="relative w-full h-[540px] lg:h-[calc(100vh-105px)] min-h-[540px] rounded-2xl border border-border-warm overflow-hidden shadow-sm bg-slate-100">
+        <!-- Thanh nổi phía trên bản đồ (giống "Search as I move the map") -->
+        <div class="absolute top-3 left-1/2 -translate-x-1/2 z-[400] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-full px-3.5 py-1.5 shadow-md flex items-center gap-2 text-xs whitespace-nowrap">
+          <span class="text-text-main font-medium">Định vị nhanh:</span>
+          <button type="button" onclick="flyToKhuA()" class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent font-semibold hover:bg-blue-100 transition-colors">Khu A</button>
+          <button type="button" onclick="flyToKhuB()" class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent font-semibold hover:bg-blue-100 transition-colors">Khu B</button>
         </div>
 
-        <!-- Quick campus focus buttons -->
-        <div class="flex items-center gap-2 text-xs">
-          <span class="text-text-sub font-semibold shrink-0">Định vị nhanh:</span>
-          <button type="button" onclick="flyToKhuA()" class="px-2.5 py-1 rounded-card bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all font-medium">
-            Khu A (Ung Văn Khiêm)
+        <!-- Cụm nút công cụ nổi góc dưới trái (giống ảnh mẫu) -->
+        <div class="absolute bottom-4 left-3 z-[400] flex flex-col gap-1.5">
+          <button type="button" onclick="flyToKhuA()" title="Tới Khu A ĐH An Giang" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
+            <span class="material-symbols-outlined text-[18px]">school</span>
           </button>
-          <button type="button" onclick="flyToKhuB()" class="px-2.5 py-1 rounded-card bg-bg-sub border border-border-warm text-text-main hover:border-accent transition-all font-medium">
-            Khu B (Võ Thị Sáu)
+          <button type="button" onclick="flyToKhuB()" title="Tới Khu B ĐH An Giang" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
+            <span class="material-symbols-outlined text-[18px]">directions_bus</span>
+          </button>
+          <button type="button" onclick="if(map){map.setView(AGU_KHU_A, 15);}" title="Đưa bản đồ về mặc định" class="w-9 h-9 rounded-xl bg-white border border-slate-200 shadow-md flex items-center justify-center text-text-sub hover:text-accent transition-colors">
+            <span class="material-symbols-outlined text-[18px]">my_location</span>
           </button>
         </div>
 
         <!-- Leaflet Map Container -->
-        <div id="real-map" class="w-full h-[540px] rounded-card border border-border-warm overflow-hidden relative z-0"></div>
-
-        <!-- Chú thích bản đồ -->
-        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-text-sub pt-2 border-t border-border-warm">
-          <span class="inline-flex items-center gap-1">
-            <span class="w-3 h-3 rounded-full bg-[#A84232] inline-block"></span>Cơ sở ĐH An Giang
-          </span>
-          <span class="inline-flex items-center gap-1">
-            <span class="w-3 h-3 rounded-full bg-accent inline-block"></span>Vị trí phòng trọ
-          </span>
-          <span class="text-text-sub ml-auto">Bấm vào ghim để xem giá</span>
-        </div>
+        <div id="real-map" class="w-full h-full z-0"></div>
       </div>
     </aside>
 
@@ -738,6 +724,37 @@ include_once __DIR__ . '/dungchung/header.php';
     } catch (err) {
       console.error('Lỗi toggle yêu thích:', err);
       if (typeof showToast === 'function') showToast('Không thể kết nối máy chủ.', 'error');
+    }
+  }
+
+  // Chuyển đổi chế độ xem Danh sách / Lưới (giống ảnh mẫu)
+  function setListViewMode(mode) {
+    const grid = document.getElementById('room-list-grid');
+    const btnGrid = document.getElementById('btn-view-grid');
+    const btnList = document.getElementById('btn-view-list');
+    if (!grid) return;
+    if (mode === 'grid') {
+      grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3.5';
+      grid.querySelectorAll('article').forEach(card => {
+        card.classList.remove('sm:flex-row');
+        const imgBox = card.firstElementChild;
+        if (imgBox) {
+          imgBox.classList.remove('sm:w-48', 'sm:h-40');
+        }
+      });
+      if (btnGrid) btnGrid.classList.replace('text-text-sub', 'text-accent');
+      if (btnList) btnList.classList.replace('text-accent', 'text-text-sub');
+    } else {
+      grid.className = 'grid grid-cols-1 gap-3.5';
+      grid.querySelectorAll('article').forEach(card => {
+        card.classList.add('sm:flex-row');
+        const imgBox = card.firstElementChild;
+        if (imgBox) {
+          imgBox.classList.add('sm:w-48', 'sm:h-40');
+        }
+      });
+      if (btnList) btnList.classList.replace('text-text-sub', 'text-accent');
+      if (btnGrid) btnGrid.classList.replace('text-accent', 'text-text-sub');
     }
   }
 

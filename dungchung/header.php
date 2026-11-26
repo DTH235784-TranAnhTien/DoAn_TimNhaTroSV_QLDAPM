@@ -18,25 +18,25 @@ require_once __DIR__ . '/../cauhinh/database.php';
       theme: {
         extend: {
           colors: {
-            "bg-main": "#F7F5F0",
-            "bg-sub": "#EFEBE3",
-            "text-main": "#1E1B16",
-            "text-sub": "#6B6358",
-            "accent": "#00685F",
-            "border-warm": "#DDD6C9",
-            "status-green-bg": "#E6F2EE",
-            "status-green-text": "#00685F",
-            "status-amber-bg": "#F5EFE0",
-            "status-amber-text": "#785713",
-            "status-gray-bg": "#E6E2DA",
-            "status-gray-text": "#6B6358",
-            "status-red-border": "#D9B8B4",
-            "status-red-bg": "#F7ECEA",
-            "status-red-text": "#7D2D24"
+            "bg-main": "#FFFFFF",
+            "bg-sub": "#F8FAFC",
+            "text-main": "#0F172A",
+            "text-sub": "#64748B",
+            "accent": "#2563EB",
+            "border-warm": "#E2E8F0",
+            "status-green-bg": "#EFF6FF",
+            "status-green-text": "#1D4ED8",
+            "status-amber-bg": "#ECFDF5",
+            "status-amber-text": "#047857",
+            "status-gray-bg": "#F1F5F9",
+            "status-gray-text": "#475569",
+            "status-red-border": "#FECACA",
+            "status-red-bg": "#FEF2F2",
+            "status-red-text": "#DC2626"
           },
           fontFamily: {
             "sans": ["Be Vietnam Pro", "sans-serif"],
-            "serif": ["Newsreader", "Georgia", "serif"]
+            "serif": ["Be Vietnam Pro", "sans-serif"]
           },
           fontSize: {
             "xs": ["13px", { "lineHeight": "19px" }],
@@ -49,8 +49,8 @@ require_once __DIR__ . '/../cauhinh/database.php';
             "4xl": ["48px", { "lineHeight": "56px" }]
           },
           borderRadius: {
-            "card": "6px",
-            "btn": "8px",
+            "card": "14px",
+            "btn": "10px",
             "full": "9999px"
           }
         }
@@ -61,18 +61,18 @@ require_once __DIR__ . '/../cauhinh/database.php';
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #F7F5F0;
-      color: #1E1B16;
+      background-color: #FFFFFF;
+      color: #0F172A;
       font-family: 'Be Vietnam Pro', sans-serif;
       font-size: 14px;
       line-height: 1.6;
       scroll-behavior: smooth;
     }
     h1 {
-      font-family: 'Newsreader', Georgia, serif;
+      font-family: 'Be Vietnam Pro', sans-serif;
       font-weight: 700;
       letter-spacing: -0.02em;
-      line-height: 1.15;
+      line-height: 1.2;
     }
     h2 {
       font-family: 'Be Vietnam Pro', sans-serif;
@@ -86,17 +86,18 @@ require_once __DIR__ . '/../cauhinh/database.php';
       font-variant-numeric: tabular-nums;
     }
     .card-hover {
-      transition: border-color 0.15s ease;
+      transition: all 0.2s ease;
     }
     .card-hover:hover {
-      border-color: rgba(0, 104, 95, 0.45);
+      border-color: rgba(37, 99, 235, 0.4);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
     }
     .material-symbols-outlined {
       font-size: 18px;
       vertical-align: middle;
     }
     input[type="range"] {
-      accent-color: #00685F;
+      accent-color: #2563EB;
     }
     .page-view {
       animation: fadeIn 0.25s ease-out;
@@ -113,9 +114,9 @@ require_once __DIR__ . '/../cauhinh/database.php';
       from { width: 100%; }
       to { width: 0%; }
     }
-    .admin-menu-item { color: #6B6358; }
-    .admin-menu-item:hover { background-color: rgba(247, 245, 240, 0.6); color: #1E1B16; }
-    .admin-menu-item.active {  background-color: #00685F;  color: #FFFFFF;}
+    .admin-menu-item { color: #64748B; }
+    .admin-menu-item:hover { background-color: #F1F5F9; color: #0F172A; }
+    .admin-menu-item.active { background-color: #2563EB; color: #FFFFFF; }
     .admin-menu-item.active .material-symbols-outlined { color: #FFFFFF; }
 
     @media (prefers-reduced-motion: reduce) {

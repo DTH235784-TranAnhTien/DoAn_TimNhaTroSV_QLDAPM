@@ -199,7 +199,8 @@ $dsHoSo = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $tongHoSo = count($dsHoSo);
 
 // Tổng hồ sơ toàn hệ thống
-$kpiTong = (int)($conn->query("SELECT COUNT(*) AS c FROM HoSoGhepPhong WHERE TrangThai='DangTim'")->fetch_assoc()['c'] ?? 0);
+$resKpi = $conn->query("SELECT COUNT(*) AS c FROM HoSoGhepPhong WHERE TrangThai='DangTim'");
+$kpiTong = $resKpi ? (int)($resKpi->fetch_assoc()['c'] ?? 0) : 0;
 
 include_once __DIR__ . '/dungchung/header.php';
 ?>
