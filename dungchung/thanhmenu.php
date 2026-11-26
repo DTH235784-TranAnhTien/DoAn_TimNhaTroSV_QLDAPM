@@ -52,8 +52,10 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
             $stmtCnt->close();
         }
     } elseif ($laAdmin) {
-        $cntPhongCho = (int)($conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'ChoDuyet'")->fetch_assoc()['c'] ?? 0);
-        $cntBaoCao   = (int)($conn->query("SELECT COUNT(*) AS c FROM BaoCaoViPham WHERE TrangThai = 'ChoXuLy'")->fetch_assoc()['c'] ?? 0);
+        $resPhongCho = $conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'ChoDuyet'");
+        $cntPhongCho = $resPhongCho ? (int)($resPhongCho->fetch_assoc()['c'] ?? 0) : 0;
+        $resBaoCao   = $conn->query("SELECT COUNT(*) AS c FROM BaoCaoViPham WHERE TrangThai = 'ChoXuLy'");
+        $cntBaoCao   = $resBaoCao ? (int)($resBaoCao->fetch_assoc()['c'] ?? 0) : 0;
         $soThongBao  = $cntPhongCho + $cntBaoCao;
         if ($cntPhongCho > 0) {
             $dsThongBao[] = [
@@ -99,57 +101,64 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
 }
 ?>
 <header id="standard-header" class="w-full bg-bg-main border-b border-border-warm sticky top-0 z-50">
-  <div class="h-16 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-    <!-- Brand Identity -->
+  <div class="h-16 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+    <!-- Brand Identity (Phong cách Roommates) -->
     <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="flex items-center gap-2.5 shrink-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2">
-      <div class="w-8 h-8 rounded-card bg-accent text-white flex items-center justify-center font-bold text-base">AG</div>
+      <div class="w-9 h-9 rounded-xl bg-accent text-white flex items-center justify-center shadow-sm">
+        <span class="material-symbols-outlined text-[21px]">home</span>
+      </div>
       <div>
-        <span class="text-base font-bold text-text-main block leading-none">CampusNest AGU</span>
-        <span class="text-xs text-text-sub block mt-0.5">Bảng tin trọ ĐH An Giang</span>
+        <span class="text-lg font-bold text-text-main tracking-tight block leading-none">CampusNest</span>
+        <span class="text-[11px] text-text-sub block mt-0.5 font-medium">Trọ sinh viên AGU</span>
       </div>
     </a>
 
-    <!-- Desktop Navigation Links -->
-    <nav class="hidden xl:flex items-center gap-1">
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" data-nav="home" class="nav-link text-sm font-semibold px-3 py-1.5 rounded-btn <?= ($trangHienTai ?? 'home') === 'home' ? 'text-accent bg-bg-sub' : 'text-text-sub hover:text-text-main' ?> transition-all duration-200 active:scale-[0.98]">
-        Trang chính
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" data-nav="explore" class="nav-link text-sm font-medium px-3 py-1.5 rounded-btn <?= ($trangHienTai ?? '') === 'explore' ? 'text-accent bg-bg-sub font-semibold' : 'text-text-sub hover:text-text-main' ?> transition-all duration-200 active:scale-[0.98]">
-        Bản đồ &amp; Toàn bộ trọ
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" data-nav="roommate" class="nav-link text-sm font-medium px-3 py-1.5 rounded-btn <?= ($trangHienTai ?? '') === 'roommate' ? 'text-accent bg-bg-sub font-semibold' : 'text-text-sub hover:text-text-main' ?> transition-all duration-200 active:scale-[0.98]">
-        Ghép bạn cùng phòng (AI)
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" data-nav="guide" class="nav-link text-sm font-medium px-3 py-1.5 rounded-btn <?= ($trangHienTai ?? '') === 'guide' ? 'text-accent bg-bg-sub font-semibold' : 'text-text-sub hover:text-text-main' ?> transition-all duration-200 active:scale-[0.98]">
-        Cẩm nang &amp; Review
-      </a>
+    <!-- Thanh tìm kiếm trung tâm dạng Pill (giống ảnh mẫu) -->
+    <form action="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" method="GET" class="hidden md:flex items-center flex-1 max-w-sm bg-slate-100 hover:bg-slate-100/90 focus-within:bg-white focus-within:ring-2 focus-within:ring-accent/20 focus-within:border-accent border border-transparent rounded-full pl-4 pr-1.5 py-1 transition-all">
+      <input type="search" name="q" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>"
+             placeholder="Tìm phòng, Ung Văn Khiêm, Mỹ Xuyên..."
+             class="w-full bg-transparent text-xs sm:text-sm text-text-main placeholder-text-sub focus:outline-none">
+      <button type="submit" aria-label="Tìm kiếm"
+              class="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center shrink-0 hover:bg-blue-700 transition-colors shadow-sm">
+        <span class="material-symbols-outlined text-[18px]">search</span>
+      </button>
+    </form>
+
+    <!-- Nav Links gọn gàng trên 1 hàng (Desktop) -->
+    <nav class="hidden xl:flex items-center gap-0.5 shrink-0">
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? 'home') === 'home' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Trang chủ</a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'explore' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Tìm phòng</a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'roommate' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Ghép bạn</a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'guide' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Cẩm nang</a>
       <?php if ($laChuTro || $laAdmin): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" data-nav="landlord" class="nav-link text-sm font-medium px-3 py-1.5 rounded-btn <?= ($trangHienTai ?? '') === 'landlord' ? 'text-accent bg-bg-sub font-semibold' : 'text-text-sub hover:text-text-main' ?> transition-all duration-200 active:scale-[0.98]">
-        Chủ trọ
-      </a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'landlord' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Chủ trọ</a>
       <?php endif; ?>
       <?php if ($laAdmin): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php" data-nav="admin" class="nav-link text-sm font-medium px-3 py-1.5 rounded-btn flex items-center gap-1 <?= ($trangHienTai ?? '') === 'admin' ? 'text-accent bg-bg-sub font-semibold' : 'text-text-sub hover:text-text-main' ?> transition-all duration-200 active:scale-[0.98]">
-        <span class="material-symbols-outlined text-text-main" id="admin-lock-icon">lock_open</span>
-        <span>Quản trị</span>
-      </a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php" class="px-2.5 py-1.5 rounded-full text-xs <?= ($trangHienTai ?? '') === 'admin' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-colors">Quản trị</a>
       <?php endif; ?>
     </nav>
 
     <!-- Right Action Controls -->
-    <div class="flex items-center gap-2.5 shrink-0">
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
       <?php if ($laChuTro || $laAdmin): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/dangtin.php" class="hidden items-center gap-1.5 bg-accent text-white font-semibold text-xs px-3.5 py-2 rounded-btn md:inline-flex transition-all duration-200 active:scale-[0.98]" type="button">
-        <span class="material-symbols-outlined">add</span>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro/dangtin.php" class="hidden items-center gap-1.5 bg-accent hover:bg-blue-700 text-white font-semibold text-xs px-3.5 py-2 rounded-full md:inline-flex transition-all duration-200 active:scale-[0.98] shadow-sm" type="button">
+        <span class="material-symbols-outlined text-[16px]">add</span>
         <span>Đăng tin trọ</span>
       </a>
       <?php endif; ?>
-      <!-- Chuông & Dropdown Thông báo (Thành viên 4) -->
+
+      <!-- Icon Yêu thích (giống ảnh mẫu) -->
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/sinhvien/phongdaluu.php" aria-label="Phòng đã lưu" title="Phòng đã lưu"
+         class="p-2 rounded-full hover:bg-slate-100 text-text-sub hover:text-text-main transition-colors hidden sm:inline-flex items-center justify-center">
+        <span class="material-symbols-outlined text-[21px]">favorite_border</span>
+      </a>
+
+      <!-- Chuông & Dropdown Thông báo -->
       <div id="notif-wrapper" class="relative">
-        <button id="notif-btn" onclick="toggleNotifDropdown(event)" aria-label="Xem thông báo" class="p-2 rounded-btn bg-bg-sub border border-border-warm text-text-main card-hover relative transition-all duration-200 active:scale-[0.98]" type="button">
-          <span class="material-symbols-outlined">notifications</span>
+        <button id="notif-btn" onclick="toggleNotifDropdown(event)" aria-label="Xem thông báo" class="p-2 rounded-full hover:bg-slate-100 text-text-sub hover:text-text-main relative transition-all duration-200 active:scale-[0.98]" type="button">
+          <span class="material-symbols-outlined text-[21px]">notifications_none</span>
           <?php if ($soThongBao > 0): ?>
-          <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center tnum shadow-sm">
+          <span class="absolute top-0.5 right-0.5 min-w-[17px] h-[17px] px-1 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center tnum shadow-sm ring-2 ring-white">
             <?= $soThongBao > 9 ? '9+' : $soThongBao ?>
           </span>
           <?php endif; ?>
@@ -185,17 +194,21 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
 
       <?php if (!$nd): ?>
       <!-- Guest Login Button -->
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php" type="button" class="px-3.5 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover transition-all duration-200 active:scale-[0.98]">
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php" type="button" class="px-4 py-2 rounded-full bg-accent text-white font-semibold text-xs hover:bg-blue-700 transition-all duration-200 active:scale-[0.98] shadow-sm">
         Đăng nhập
       </a>
       <?php else: ?>
-      <!-- Logged-in Avatar & Dropdown -->
-      <div id="user-avatar-wrapper" class="relative">
-        <button id="user-avatar-btn" onclick="toggleAvatarDropdown(event)" type="button" class="flex items-center gap-1.5 pl-1 py-1 pr-1.5 rounded-full hover:bg-bg-sub transition-all duration-200 active:scale-[0.98]">
+      <!-- Logged-in Avatar & Name (giống ảnh mẫu) -->
+      <div id="user-avatar-wrapper" class="relative pl-1 sm:border-l sm:border-border-warm">
+        <button id="user-avatar-btn" onclick="toggleAvatarDropdown(event)" type="button" class="flex items-center gap-2 pl-1.5 py-1 pr-2 rounded-full hover:bg-slate-100 transition-all duration-200 active:scale-[0.98]">
           <div class="relative overflow-hidden w-8 h-8 rounded-full border border-border-warm shrink-0">
-            <img id="header-user-avatar" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.insertAdjacentHTML('afterend','<span class=\'material-symbols-outlined text-text-sub text-4xl absolute inset-0 flex items-center justify-center bg-bg-sub\'>image</span>');" alt="Tài khoản" class="w-full h-full object-cover" src="<?= htmlspecialchars($nd_anh) ?>">
+            <img id="header-user-avatar" loading="lazy" onerror="this.onerror=null; this.style.display='none'; this.insertAdjacentHTML('afterend','<span class=\'material-symbols-outlined text-text-sub text-2xl absolute inset-0 flex items-center justify-center bg-bg-sub\'>person</span>');" alt="Tài khoản" class="w-full h-full object-cover" src="<?= htmlspecialchars($nd_anh) ?>">
           </div>
-          <span class="material-symbols-outlined text-text-sub">expand_more</span>
+          <div class="hidden sm:block text-left leading-tight">
+            <span class="text-xs font-bold text-text-main block max-w-[110px] truncate"><?= htmlspecialchars($nd_hoten) ?></span>
+            <span class="text-[11px] text-text-sub block"><?= $nd_vaitro === 'QuanTriVien' ? 'Quản trị' : ($nd_vaitro === 'ChuTro' ? 'Chủ trọ' : 'Sinh viên') ?></span>
+          </div>
+          <span class="material-symbols-outlined text-text-sub text-[18px]">expand_more</span>
         </button>
 
         <div id="avatar-dropdown" class="absolute top-full right-0 mt-2 w-64 bg-bg-main border border-border-warm rounded-card shadow-lg z-50 hidden overflow-hidden">
@@ -264,18 +277,22 @@ if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
     </div>
   </div>
 
-  <!-- Mobile Navigation Strip -->
-  <div class="xl:hidden flex items-center gap-1.5 overflow-x-auto px-4 py-2 bg-bg-sub border-t border-border-warm">
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="nav-link-mobile shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? 'home') === 'home' ? 'bg-accent text-white font-semibold' : 'bg-bg-main text-text-sub border border-border-warm font-medium' ?> transition-all duration-200">Trang chính</a>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="nav-link-mobile shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'explore' ? 'bg-accent text-white font-semibold' : 'bg-bg-main text-text-sub border border-border-warm font-medium' ?> transition-all duration-200">Bản đồ &amp; Toàn bộ trọ</a>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="nav-link-mobile shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'roommate' ? 'bg-accent text-white font-semibold' : 'bg-bg-main text-text-sub border border-border-warm font-medium' ?> transition-all duration-200">Ghép bạn AI</a>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" class="nav-link-mobile shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'guide' ? 'bg-accent text-white font-semibold' : 'bg-bg-main text-text-sub border border-border-warm font-medium' ?> transition-all duration-200">Cẩm nang &amp; Review</a>
-    <?php if ($laChuTro || $laAdmin): ?>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="nav-link-mobile shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'landlord' ? 'bg-accent text-white font-semibold' : 'bg-bg-main text-text-sub border border-border-warm font-medium' ?> transition-all duration-200">Chủ trọ</a>
-    <?php endif; ?>
-    <?php if ($laAdmin): ?>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php" class="nav-link-mobile shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'admin' ? 'bg-accent text-white font-semibold' : 'bg-bg-main text-text-sub border border-border-warm font-medium' ?> transition-all duration-200">Quản trị</a>
-    <?php endif; ?>
+  <!-- Mobile Navigation Strip (chỉ hiện trên màn hình nhỏ) -->
+  <div class="xl:hidden bg-bg-main border-t border-slate-100">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 flex items-center gap-1.5 overflow-x-auto py-2">
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? 'home') === 'home' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Trang chủ</a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'explore' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Bản đồ &amp; Toàn bộ trọ</a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'roommate' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Ghép bạn cùng phòng (AI)</a>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/camnang.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'guide' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Cẩm nang &amp; Review</a>
+      <?php if ($laChuTro || $laAdmin): ?>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="shrink-0 px-3 py-1 rounded-full text-xs <?= ($trangHienTai ?? '') === 'landlord' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">Quản lý Chủ trọ</a>
+      <?php endif; ?>
+      <?php if ($laAdmin): ?>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php" class="shrink-0 px-3 py-1 rounded-full text-xs inline-flex items-center gap-1 <?= ($trangHienTai ?? '') === 'admin' ? 'bg-status-green-bg text-accent font-semibold' : 'text-text-sub hover:text-text-main hover:bg-slate-100 font-medium' ?> transition-all duration-200">
+        <span class="material-symbols-outlined text-[14px]">admin_panel_settings</span>Quản trị
+      </a>
+      <?php endif; ?>
+    </div>
   </div>
 
   <!-- Admin Dual-Mode Bar -->

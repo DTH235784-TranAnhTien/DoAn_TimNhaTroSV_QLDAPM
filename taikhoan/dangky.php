@@ -189,8 +189,7 @@ include_once __DIR__ . '/../dungchung/header.php';
         </div>
       </div>
 
-      <button type="submit" class="w-full py-2.5 rounded-btn bg-accent text-white font-semibold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98] hover:opacity-95 mt-2">
-        <span class="material-symbols-outlined">person_add</span>
+      <button type="submit" class="w-full py-2.5 rounded-btn bg-accent text-white font-semibold text-sm flex items-center justify-center transition-all duration-200 active:scale-[0.98] hover:opacity-95 mt-2">
         <span>Tạo tài khoản</span>
       </button>
     </form>

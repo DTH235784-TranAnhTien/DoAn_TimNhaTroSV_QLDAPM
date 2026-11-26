@@ -199,7 +199,8 @@ $dsHoSo = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $tongHoSo = count($dsHoSo);
 
 // Tổng hồ sơ toàn hệ thống
-$kpiTong = (int)($conn->query("SELECT COUNT(*) AS c FROM HoSoGhepPhong WHERE TrangThai='DangTim'")->fetch_assoc()['c'] ?? 0);
+$resKpi = $conn->query("SELECT COUNT(*) AS c FROM HoSoGhepPhong WHERE TrangThai='DangTim'");
+$kpiTong = $resKpi ? (int)($resKpi->fetch_assoc()['c'] ?? 0) : 0;
 
 include_once __DIR__ . '/dungchung/header.php';
 ?>
@@ -222,15 +223,13 @@ include_once __DIR__ . '/dungchung/header.php';
     <div class="shrink-0 flex items-center gap-3">
       <?php if ($daDangNhapSV): ?>
       <button type="button" onclick="openRoommateModal()"
-              class="px-5 py-3 rounded-btn bg-accent text-white font-semibold text-sm flex items-center gap-2 shadow-sm transition-all duration-200 active:scale-[0.98] hover:opacity-95">
-        <span class="material-symbols-outlined text-[20px]">person_add</span>
-        <span><?= $hoSoCuaToi ? 'Chỉnh sửa tin của tôi' : '+ Đăng tin tìm bạn ghép' ?></span>
+              class="px-5 py-2.5 rounded-full bg-accent text-white font-semibold text-sm shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-blue-700">
+        <?= $hoSoCuaToi ? 'Chỉnh sửa tin của tôi' : '+ Đăng tin tìm bạn ghép' ?>
       </button>
       <?php elseif (!daDangNhap()): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php?tb=<?= urlencode('Vui long dang nhap de dang tin tim ban o ghep.') ?>"
-         class="px-5 py-3 rounded-btn bg-accent text-white font-semibold text-sm flex items-center gap-2 shadow-sm transition-all duration-200 active:scale-[0.98] hover:opacity-95">
-        <span class="material-symbols-outlined text-[20px]">login</span>
-        <span>Đăng nhập để đăng tin tìm bạn</span>
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php?tb=<?= urlencode('Vui lòng đăng nhập để đăng tin tìm bạn ở ghép.') ?>"
+         class="px-5 py-2.5 rounded-full bg-accent text-white font-semibold text-sm shadow-sm transition-all duration-200 active:scale-[0.98] hover:bg-blue-700">
+        Đăng nhập để đăng tin tìm bạn
       </a>
       <?php endif; ?>
     </div>
@@ -242,16 +241,13 @@ include_once __DIR__ . '/dungchung/header.php';
     $dangTim = $hoSoCuaToi['TrangThai'] === 'DangTim';
   ?>
   <div class="p-4 rounded-card border <?= $dangTim ? 'bg-status-green-bg/40 border-accent/40' : 'bg-bg-sub border-border-warm' ?> flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-    <div class="flex items-center gap-3">
-      <span class="material-symbols-outlined text-2xl <?= $dangTim ? 'text-accent' : 'text-text-sub' ?>">account_box</span>
-      <div>
-        <p class="font-bold text-text-main">
-          Hồ sơ của bạn: <span class="<?= $dangTim ? 'text-accent' : 'text-text-sub' ?>"><?= $dangTim ? 'Đang hiển thị tìm bạn' : 'Đã tạm dừng tìm bạn' ?></span>
-        </p>
-        <p class="text-text-sub mt-0.5">
-          Ngân sách: <strong><?= $nsMe ?> đ</strong> · Khu vực: <?= htmlspecialchars($hoSoCuaToi['KhuVucUuTien'] ?: 'Chưa đặt') ?> · Giờ giấc: <?= $hoSoCuaToi['GioGiac'] ?>
-        </p>
-      </div>
+    <div>
+      <p class="font-bold text-text-main">
+        Hồ sơ của bạn: <span class="<?= $dangTim ? 'text-accent' : 'text-text-sub' ?>"><?= $dangTim ? 'Đang hiển thị tìm bạn' : 'Đã tạm dừng tìm bạn' ?></span>
+      </p>
+      <p class="text-text-sub mt-0.5">
+        Ngân sách: <strong><?= $nsMe ?> đ</strong> · Khu vực: <?= htmlspecialchars($hoSoCuaToi['KhuVucUuTien'] ?: 'Chưa đặt') ?> · Giờ giấc: <?= $hoSoCuaToi['GioGiac'] ?>
+      </p>
     </div>
     <div class="flex items-center gap-2">
       <button type="button" onclick="openRoommateModal()" class="px-3.5 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold card-hover">
@@ -322,41 +318,41 @@ include_once __DIR__ . '/dungchung/header.php';
       </div>
     </div>
 
-    <!-- DẢI THẺ LỌC NHANH (QUICK TAGS) -->
+    <!-- DẢI THẺ LỌC NHANH (QUICK TAGS - Bỏ emoji rườm rà) -->
     <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-border-warm text-xs">
-      <span class="text-text-sub font-semibold">Lọc nhanh theo thói quen:</span>
+      <span class="text-text-sub font-semibold">Lọc nhanh:</span>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=khong-hut-thuoc"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='khong-hut-thuoc'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        🚭 Không hút thuốc
+         class="px-3 py-1 rounded-full border <?= $filterTag==='khong-hut-thuoc'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Không hút thuốc
       </a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=khong-thu-cung"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='khong-thu-cung'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        🚫 Không nuôi thú cưng
+         class="px-3 py-1 rounded-full border <?= $filterTag==='khong-thu-cung'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Không nuôi thú cưng
       </a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=nuoi-thu-cung"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='nuoi-thu-cung'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        🐾 Được nuôi thú cưng
+         class="px-3 py-1 rounded-full border <?= $filterTag==='nuoi-thu-cung'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Được nuôi thú cưng
       </a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=ngu-som"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='ngu-som'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        ⏰ Ngủ sớm dậy sớm
+         class="px-3 py-1 rounded-full border <?= $filterTag==='ngu-som'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Ngủ sớm dậy sớm
       </a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=duoi-1m"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='duoi-1m'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        💰 Ngân sách &le; 1 triệu
+         class="px-3 py-1 rounded-full border <?= $filterTag==='duoi-1m'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Ngân sách &le; 1 triệu
       </a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=khu-a"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='khu-a'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        📍 Gần Khu A (Ung Văn Khiêm)
+         class="px-3 py-1 rounded-full border <?= $filterTag==='khu-a'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Gần Khu A
       </a>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=khu-b"
-         class="px-2.5 py-1 rounded-card border <?= $filterTag==='khu-b'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        📍 Gần Khu B (Võ Thị Sáu)
+         class="px-3 py-1 rounded-full border <?= $filterTag==='khu-b'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
+        Gần Khu B
       </a>
 
       <?php if ($q || $filterGioiTinh || $filterNganSach || $filterGioGiac || $filterKhuVuc || $filterTag): ?>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="px-3 py-1 rounded-card bg-status-red-bg text-status-red-text border border-status-red-border font-semibold flex items-center gap-1 ml-auto">
-        <span class="material-symbols-outlined text-[14px]">close</span>Đặt lại
+      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php" class="px-3 py-1 rounded-full bg-status-red-bg text-status-red-text border border-status-red-border font-semibold ml-auto">
+        Đặt lại
       </a>
       <?php endif; ?>
     </div>
@@ -372,7 +368,6 @@ include_once __DIR__ . '/dungchung/header.php';
     <?php if (empty($dsHoSo)): ?>
     <!-- EMPTY STATE KHI CHƯA CÓ AI ĐĂNG / KHÔNG TÌM THẤY -->
     <div class="py-16 text-center space-y-4 bg-bg-main rounded-card border border-border-warm border-dashed">
-      <span class="material-symbols-outlined text-5xl text-text-sub block mx-auto">group_off</span>
       <div>
         <p class="text-base font-bold text-text-main">Chưa có hồ sơ tìm bạn ghép phù hợp tiêu chí</p>
         <p class="text-xs text-text-sub mt-1">Hãy thử bỏ bớt bộ lọc hoặc là người đầu tiên đăng tin tìm bạn cùng phòng!</p>
@@ -380,13 +375,13 @@ include_once __DIR__ . '/dungchung/header.php';
       <div class="pt-2">
         <?php if ($daDangNhapSV): ?>
         <button type="button" onclick="openRoommateModal()"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm">
-          <span class="material-symbols-outlined text-base">person_add</span>Tạo hồ sơ ghép phòng ngay
+                class="inline-flex items-center px-5 py-2.5 rounded-full bg-accent text-white font-semibold text-sm">
+          Tạo hồ sơ ghép phòng ngay
         </button>
         <?php else: ?>
         <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php"
-           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm">
-          <span class="material-symbols-outlined text-base">login</span>Đăng nhập để đăng tin
+           class="inline-flex items-center px-5 py-2.5 rounded-full bg-accent text-white font-semibold text-sm">
+          Đăng nhập để đăng tin
         </a>
         <?php endif; ?>
       </div>

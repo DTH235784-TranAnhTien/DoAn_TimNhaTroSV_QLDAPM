@@ -26,54 +26,42 @@ include_once __DIR__ . '/dungchung/header.php';
 
     <div class="divide-y divide-border-warm border border-border-warm rounded-card bg-bg-main">
       <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <span class="material-symbols-outlined text-accent mt-0.5">description</span>
-          <div>
-            <h3 class="text-sm font-bold text-text-main">1. Mẫu hợp đồng thuê phòng trọ sinh viên chuẩn AGU (Bản 2025)</h3>
-            <p class="text-xs text-text-sub">Có điều khoản cố định giá điện nước 12 tháng và hoàn cọc 100% khi báo trước 30 ngày</p>
-          </div>
+        <div>
+          <h3 class="text-sm font-bold text-text-main">1. Mẫu hợp đồng thuê phòng trọ sinh viên chuẩn AGU (Bản 2025)</h3>
+          <p class="text-xs text-text-sub mt-0.5">Có điều khoản cố định giá điện nước 12 tháng và hoàn cọc 100% khi báo trước 30 ngày</p>
         </div>
-        <button onclick="showToast('Đang tải: Mau_Hop_Dong_Thue_Tro_AGU_2025.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover flex items-center gap-1">
-          <span class="material-symbols-outlined">download</span> Tải PDF · 1.2 MB
+        <button onclick="showToast('Đang tải: Mau_Hop_Dong_Thue_Tro_AGU_2025.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover">
+          Tải PDF · 1.2 MB
         </button>
       </div>
 
       <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <span class="material-symbols-outlined text-accent mt-0.5">receipt_long</span>
-          <div>
-            <h3 class="text-sm font-bold text-text-main">2. Bảng quy định định mức giá điện sinh hoạt cho sinh viên thuê nhà</h3>
-            <p class="text-xs text-text-sub">Hướng dẫn cách tính bậc thang điện lực An Giang khi chủ nhà đăng ký định mức sinh viên</p>
-          </div>
+        <div>
+          <h3 class="text-sm font-bold text-text-main">2. Bảng quy định định mức giá điện sinh hoạt cho sinh viên thuê nhà</h3>
+          <p class="text-xs text-text-sub mt-0.5">Hướng dẫn cách tính bậc thang điện lực An Giang khi chủ nhà đăng ký định mức sinh viên</p>
         </div>
-        <button onclick="showToast('Đang tải: Quy_Dinh_Gia_Dien_Sinh_Vien_An_Giang.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover flex items-center gap-1">
-          <span class="material-symbols-outlined">download</span> Tải PDF · 480 KB
+        <button onclick="showToast('Đang tải: Quy_Dinh_Gia_Dien_Sinh_Vien_An_Giang.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover">
+          Tải PDF · 480 KB
         </button>
       </div>
 
       <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <span class="material-symbols-outlined text-accent mt-0.5">how_to_reg</span>
-          <div>
-            <h3 class="text-sm font-bold text-text-main">3. Hướng dẫn khai báo tạm trú trực tuyến trên VNeID tại TP. Long Xuyên</h3>
-            <p class="text-xs text-text-sub">Quy trình 4 bước dành cho sinh viên ngoại tỉnh tạm trú tại P. Đông Xuyên &amp; P. Mỹ Xuyên</p>
-          </div>
+        <div>
+          <h3 class="text-sm font-bold text-text-main">3. Hướng dẫn khai báo tạm trú trực tuyến trên VNeID tại TP. Long Xuyên</h3>
+          <p class="text-xs text-text-sub mt-0.5">Quy trình 4 bước dành cho sinh viên ngoại tỉnh tạm trú tại P. Đông Xuyên &amp; P. Mỹ Xuyên</p>
         </div>
-        <button onclick="showToast('Đang tải: Huong_Dan_Tam_Tru_VNeID_Long_Xuyen.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover flex items-center gap-1">
-          <span class="material-symbols-outlined">download</span> Tải PDF · 2.1 MB
+        <button onclick="showToast('Đang tải: Huong_Dan_Tam_Tru_VNeID_Long_Xuyen.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover">
+          Tải PDF · 2.1 MB
         </button>
       </div>
 
       <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-start gap-3">
-          <span class="material-symbols-outlined text-accent mt-0.5">contact_phone</span>
-          <div>
-            <h3 class="text-sm font-bold text-text-main">4. Danh bạ điện thoại trực ban Công an Phường &amp; Tổ tự quản sinh viên ngoài nội trú</h3>
-            <p class="text-xs text-text-sub">Số điện thoại hỗ trợ trực tiếp khi xảy ra mất an ninh trật tự hoặc tranh chấp hợp đồng</p>
-          </div>
+        <div>
+          <h3 class="text-sm font-bold text-text-main">4. Danh bạ điện thoại trực ban Công an Phường &amp; Tổ tự quản sinh viên ngoài nội trú</h3>
+          <p class="text-xs text-text-sub mt-0.5">Số điện thoại hỗ trợ trực tiếp khi xảy ra mất an ninh trật tự hoặc tranh chấp hợp đồng</p>
         </div>
-        <button onclick="showToast('Đang tải: Danh_Ba_Khan_Cap_Ngoai_Tru_AGU.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover flex items-center gap-1">
-          <span class="material-symbols-outlined">download</span> Tải PDF · 320 KB
+        <button onclick="showToast('Đang tải: Danh_Ba_Khan_Cap_Ngoai_Tru_AGU.pdf', 'success')" type="button" class="px-4 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs tnum shrink-0 self-start sm:self-center card-hover">
+          Tải PDF · 320 KB
         </button>
       </div>
     </div>

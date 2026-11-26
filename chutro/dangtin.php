@@ -145,17 +145,17 @@ include_once __DIR__ . '/../dungchung/header.php';
 <div class="max-w-[760px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
   <!-- Breadcrumb -->
   <nav class="flex items-center gap-1.5 text-xs text-text-sub">
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-text-main">Trang chinh</a>
-    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="hover:text-text-main">Quan ly phong tro</a>
-    <span class="material-symbols-outlined text-[14px]">chevron_right</span>
-    <span class="text-text-main font-semibold">Dang tin phong moi</span>
+    <a href="/DoAn_TimNhaTroSV_QLDAPM/index.php" class="hover:text-text-main">Trang chủ</a>
+    <span class="text-slate-300">/</span>
+    <a href="/DoAn_TimNhaTroSV_QLDAPM/chutro.php" class="hover:text-text-main">Quản lý phòng trọ</a>
+    <span class="text-slate-300">/</span>
+    <span class="text-text-main font-semibold">Đăng tin phòng mới</span>
   </nav>
 
   <div class="bg-bg-main rounded-card border border-border-warm p-6 space-y-5">
     <div>
-      <h1 class="text-xl font-bold text-text-main">Dang tin phong tro moi</h1>
-      <p class="text-xs text-text-sub mt-1">Dien thong tin chi tiet ve phong tro de sinh vien de dang tim kiem va dat lich hen.</p>
+      <h1 class="text-xl font-bold text-text-main">Đăng tin phòng trọ mới</h1>
+      <p class="text-xs text-text-sub mt-1">Điền thông tin chi tiết về phòng trọ để sinh viên dễ dàng tìm kiếm và đặt lịch hẹn.</p>
     </div>
 
     <?php if (!empty($loi)): ?>

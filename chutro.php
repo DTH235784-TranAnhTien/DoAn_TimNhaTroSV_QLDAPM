@@ -92,16 +92,16 @@ include_once __DIR__ . '/dungchung/header.php';
           <h1 class="text-xl font-bold text-text-main"><?= htmlspecialchars($nd['hoten']) ?></h1>
           <p class="text-xs text-text-sub"><?= htmlspecialchars($nd['email']) ?></p>
           <?php if (empty($dsNhaTro)): ?>
-          <p class="text-xs text-status-amber-text mt-0.5">Chua co nha tro nao. Hay dang tin phong dau tien!</p>
+          <p class="text-xs text-status-amber-text mt-0.5">Chưa có nhà trọ nào. Hãy đăng tin phòng đầu tiên!</p>
           <?php endif; ?>
         </div>
       </div>
 
       <dl class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-6 tnum border-t lg:border-t-0 pt-4 lg:pt-0">
-        <div><dt class="text-xs text-text-sub">Tong phong</dt><dd class="text-xl font-bold text-text-main mt-0.5"><?= str_pad($tongPhong, 2, '0', STR_PAD_LEFT) ?></dd></div>
-        <div><dt class="text-xs text-text-sub">Da thue</dt><dd class="text-xl font-bold text-text-main mt-0.5"><?= str_pad($daThue, 2, '0', STR_PAD_LEFT) ?></dd></div>
-        <div><dt class="text-xs text-text-sub">Con trong</dt><dd class="text-xl font-bold text-accent mt-0.5"><?= str_pad($conPhong, 2, '0', STR_PAD_LEFT) ?></dd></div>
-        <div><dt class="text-xs text-text-sub">Cho duyet lich</dt><dd class="text-xl font-bold text-status-amber-text mt-0.5"><?= str_pad(count($dsLichHen), 2, '0', STR_PAD_LEFT) ?></dd></div>
+        <div><dt class="text-xs text-text-sub">Tổng phòng</dt><dd class="text-xl font-bold text-text-main mt-0.5"><?= str_pad($tongPhong, 2, '0', STR_PAD_LEFT) ?></dd></div>
+        <div><dt class="text-xs text-text-sub">Đã thuê</dt><dd class="text-xl font-bold text-text-main mt-0.5"><?= str_pad($daThue, 2, '0', STR_PAD_LEFT) ?></dd></div>
+        <div><dt class="text-xs text-text-sub">Còn trống</dt><dd class="text-xl font-bold text-accent mt-0.5"><?= str_pad($conPhong, 2, '0', STR_PAD_LEFT) ?></dd></div>
+        <div><dt class="text-xs text-text-sub">Chờ duyệt lịch</dt><dd class="text-xl font-bold text-status-amber-text mt-0.5"><?= str_pad(count($dsLichHen), 2, '0', STR_PAD_LEFT) ?></dd></div>
       </dl>
     </div>
   </section>
@@ -109,47 +109,46 @@ include_once __DIR__ . '/dungchung/header.php';
   <!-- Action buttons -->
   <div class="flex flex-wrap gap-3">
     <a href="<?= $base_url ?>/chutro/dangtin.php"
-       class="flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm transition-all duration-200 hover:opacity-90">
-      <span class="material-symbols-outlined text-base">post_add</span>Đăng tin phòng mới
+       class="inline-flex items-center px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm transition-all duration-200 hover:opacity-90">
+      Đăng tin phòng mới
     </a>
     <a href="<?= $base_url ?>/chutro/lichhen.php"
-       class="flex items-center gap-2 px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
-      <span class="material-symbols-outlined text-base">calendar_month</span>Sổ tay lịch hẹn
-      <?php if ($dsLichHen): ?><span class="ml-1 px-1.5 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-[10px] font-bold"><?= count($dsLichHen) ?></span><?php endif; ?>
+       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
+      Sổ tay lịch hẹn
+      <?php if ($dsLichHen): ?><span class="px-1.5 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-[10px] font-bold"><?= count($dsLichHen) ?></span><?php endif; ?>
     </a>
     <a href="<?= $base_url ?>/chutro/danhsachphong.php"
-       class="flex items-center gap-2 px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
-      <span class="material-symbols-outlined text-base">apartment</span>Quản lý phòng
+       class="inline-flex items-center px-5 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
+      Quản lý phòng
     </a>
   </div>
 
   <?php if (empty($dsPhong)): ?>
   <!-- EMPTY STATE -->
   <div class="py-20 text-center space-y-4 bg-bg-main rounded-card border border-border-warm border-dashed">
-    <span class="material-symbols-outlined text-5xl text-text-sub block mx-auto">apartment</span>
     <p class="text-base font-bold text-text-main">Chưa có phòng trọ nào</p>
     <p class="text-xs text-text-sub">Hãy đăng tin phòng trọ để sinh viên tìm kiếm.</p>
     <a href="<?= $base_url ?>/chutro/dangtin.php"
-       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm">
-      <span class="material-symbols-outlined text-base">post_add</span>Đăng tin ngay
+       class="inline-flex items-center px-5 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm">
+      Đăng tin ngay
     </a>
   </div>
 
   <?php else: ?>
   <!-- DANH SACH PHONG -->
   <section>
-    <h2 class="text-lg font-bold text-text-main mb-4">Danh sach phong cua ban</h2>
+    <h2 class="text-lg font-bold text-text-main mb-4">Danh sách phòng của bạn</h2>
     <div class="bg-bg-main rounded-card border border-border-warm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
           <thead class="bg-bg-sub text-[11px] font-bold uppercase tracking-wider text-text-sub">
             <tr>
-              <th class="py-2.5 px-4">Ten phong</th>
-              <th class="py-2.5 px-4">Nha tro</th>
-              <th class="py-2.5 px-4 tnum">Gia thue</th>
-              <th class="py-2.5 px-4">Trang thai</th>
-              <th class="py-2.5 px-4">Duyet</th>
-              <th class="py-2.5 px-4 text-right">Hanh dong</th>
+              <th class="py-2.5 px-4">Tên phòng</th>
+              <th class="py-2.5 px-4">Nhà trọ</th>
+              <th class="py-2.5 px-4 tnum">Giá thuê</th>
+              <th class="py-2.5 px-4">Trạng thái</th>
+              <th class="py-2.5 px-4">Duyệt</th>
+              <th class="py-2.5 px-4 text-right">Hành động</th>
             </tr>
           </thead>
           <tbody>
@@ -158,20 +157,20 @@ include_once __DIR__ . '/dungchung/header.php';
             $tt    = $p['TrangThai'];
             $duyet = $p['TrangThaiDuyet'];
             $ttBadge = $tt === 'ConPhong'
-              ? '<span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold">Con phong</span>'
+              ? '<span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold">Còn phòng</span>'
               : ($tt === 'DaThue'
-                ? '<span class="px-2 py-0.5 rounded-full bg-status-red-bg text-status-red-text text-xs font-semibold">Da thue</span>'
-                : '<span class="px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-xs font-semibold">Bao tri</span>');
+                ? '<span class="px-2 py-0.5 rounded-full bg-status-red-bg text-status-red-text text-xs font-semibold">Đã thuê</span>'
+                : '<span class="px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-xs font-semibold">Bảo trì</span>');
             $duyetBadge = $duyet === 'DaDuyet'
-              ? '<span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold">Da duyet</span>'
+              ? '<span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent text-xs font-semibold">Đã duyệt</span>'
               : ($duyet === 'TuChoi'
-                ? '<span class="px-2 py-0.5 rounded-full bg-status-red-bg text-status-red-text text-xs font-semibold">Tu choi</span>'
-                : '<span class="px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-xs font-semibold">Cho duyet</span>');
+                ? '<span class="px-2 py-0.5 rounded-full bg-status-red-bg text-status-red-text text-xs font-semibold">Từ chối</span>'
+                : '<span class="px-2 py-0.5 rounded-full bg-status-amber-bg text-status-amber-text text-xs font-semibold">Chờ duyệt</span>');
           ?>
           <tr class="border-t border-border-warm hover:bg-bg-sub/40">
             <td class="py-2.5 px-4 font-semibold text-text-main"><?= htmlspecialchars($p['TenPhong']) ?></td>
             <td class="py-2.5 px-4 text-xs text-text-sub"><?= htmlspecialchars($p['TenNhaTro']) ?></td>
-            <td class="py-2.5 px-4 tnum text-text-main"><?= $giaF ?> d</td>
+            <td class="py-2.5 px-4 tnum text-text-main"><?= $giaF ?> đ</td>
             <td class="py-2.5 px-4"><?= $ttBadge ?></td>
             <td class="py-2.5 px-4"><?= $duyetBadge ?></td>
             <td class="py-2.5 px-4 text-right">
@@ -198,9 +197,8 @@ include_once __DIR__ . '/dungchung/header.php';
   <?php if ($dsLichHen): ?>
   <section class="space-y-4">
     <div class="flex items-center justify-between">
-      <h2 class="text-base font-bold text-text-main flex items-center gap-2">
-        <span class="material-symbols-outlined text-accent text-lg">calendar_month</span>
-        <span>Lịch hẹn xem phòng chờ duyệt (<?= count($dsLichHen) ?>)</span>
+      <h2 class="text-base font-bold text-text-main">
+        Lịch hẹn xem phòng chờ duyệt (<?= count($dsLichHen) ?>)
       </h2>
       <span class="text-xs text-text-sub">Sinh viên đang chờ bạn phản hồi</span>
     </div>
