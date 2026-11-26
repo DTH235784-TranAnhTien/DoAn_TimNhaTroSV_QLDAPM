@@ -6,6 +6,97 @@ $nd_vaitro  = $nd['vaitro'] ?? '';
 $nd_anh     = $nd['anhdaidien'] ?? '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/default-avatar.png';
 $laAdmin  = $nd_vaitro === 'QuanTriVien';
 $laChuTro = $nd_vaitro === 'ChuTro';
+
+// Thông báo thực tế theo vai trò (Thành viên 4)
+$dsThongBao = [];
+$soThongBao = 0;
+$mandHienTaiMenu = (int)($nd['mannd'] ?? 0);
+
+if ($nd && $mandHienTaiMenu > 0 && isset($conn) && $conn instanceof mysqli) {
+    if ($laChuTro) {
+        $stmtTb = $conn->prepare("
+            SELECT l.MaLichHen, l.NgayHen, l.GioHen, p.TenPhong, u.HoTen AS TenSV
+            FROM LichHen l
+            JOIN PhongTro p ON l.MaPhong = p.MaPhong
+            JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro
+            JOIN NguoiDung u ON l.MaSinhVien = u.MaNguoiDung
+            WHERE n.MaChuTro = ? AND l.TrangThai = 'ChoDuyet'
+            ORDER BY l.NgayTao DESC
+            LIMIT 5
+        ");
+        if ($stmtTb) {
+            $stmtTb->bind_param('i', $mandHienTaiMenu);
+            $stmtTb->execute();
+            $resTb = $stmtTb->get_result();
+            while ($rTb = $resTb->fetch_assoc()) {
+                $dsThongBao[] = [
+                    'tieuDe' => 'Lịch hẹn chờ duyệt: ' . $rTb['TenPhong'],
+                    'moTa'   => $rTb['TenSV'] . ' · ' . date('d/m', strtotime($rTb['NgayHen'])) . ' ' . substr($rTb['GioHen'], 0, 5),
+                    'url'    => '/DoAn_TimNhaTroSV_QLDAPM/chutro/lichhen.php',
+                    'icon'   => 'event_upcoming'
+                ];
+            }
+            $stmtTb->close();
+        }
+        $stmtCnt = $conn->prepare("
+            SELECT COUNT(*) AS c
+            FROM LichHen l
+            JOIN PhongTro p ON l.MaPhong = p.MaPhong
+            JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro
+            WHERE n.MaChuTro = ? AND l.TrangThai = 'ChoDuyet'
+        ");
+        if ($stmtCnt) {
+            $stmtCnt->bind_param('i', $mandHienTaiMenu);
+            $stmtCnt->execute();
+            $soThongBao = (int)($stmtCnt->get_result()->fetch_assoc()['c'] ?? 0);
+            $stmtCnt->close();
+        }
+    } elseif ($laAdmin) {
+        $cntPhongCho = (int)($conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'ChoDuyet'")->fetch_assoc()['c'] ?? 0);
+        $cntBaoCao   = (int)($conn->query("SELECT COUNT(*) AS c FROM BaoCaoViPham WHERE TrangThai = 'ChoXuLy'")->fetch_assoc()['c'] ?? 0);
+        $soThongBao  = $cntPhongCho + $cntBaoCao;
+        if ($cntPhongCho > 0) {
+            $dsThongBao[] = [
+                'tieuDe' => $cntPhongCho . ' tin phòng trọ chờ duyệt',
+                'moTa'   => 'Bấm để vào kiểm duyệt tin đăng mới',
+                'url'    => '/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=moderation',
+                'icon'   => 'fact_check'
+            ];
+        }
+        if ($cntBaoCao > 0) {
+            $dsThongBao[] = [
+                'tieuDe' => $cntBaoCao . ' báo cáo vi phạm chờ xử lý',
+                'moTa'   => 'Kiểm tra phản ánh từ sinh viên',
+                'url'    => '/DoAn_TimNhaTroSV_QLDAPM/quantri/index.php?tab=reports',
+                'icon'   => 'flag'
+            ];
+        }
+    } else {
+        $stmtTb = $conn->prepare("
+            SELECT l.NgayHen, l.GioHen, p.TenPhong
+            FROM LichHen l
+            JOIN PhongTro p ON l.MaPhong = p.MaPhong
+            WHERE l.MaSinhVien = ? AND l.TrangThai = 'DaXacNhan' AND l.NgayHen >= CURDATE()
+            ORDER BY l.NgayHen ASC, l.GioHen ASC
+            LIMIT 5
+        ");
+        if ($stmtTb) {
+            $stmtTb->bind_param('i', $mandHienTaiMenu);
+            $stmtTb->execute();
+            $resTb = $stmtTb->get_result();
+            while ($rTb = $resTb->fetch_assoc()) {
+                $dsThongBao[] = [
+                    'tieuDe' => 'Lịch hẹn đã xác nhận: ' . $rTb['TenPhong'],
+                    'moTa'   => 'Ngày ' . date('d/m/Y', strtotime($rTb['NgayHen'])) . ' lúc ' . substr($rTb['GioHen'], 0, 5),
+                    'url'    => '/DoAn_TimNhaTroSV_QLDAPM/sinhvien/lichhencuatoi.php',
+                    'icon'   => 'event_available'
+                ];
+            }
+            $stmtTb->close();
+            $soThongBao = count($dsThongBao);
+        }
+    }
+}
 ?>
 <header id="standard-header" class="w-full bg-bg-main border-b border-border-warm sticky top-0 z-50">
   <div class="h-16 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
@@ -53,9 +144,44 @@ $laChuTro = $nd_vaitro === 'ChuTro';
         <span>Đăng tin trọ</span>
       </a>
       <?php endif; ?>
-      <button onclick="showToast('Hiện chưa có thông báo mới.', 'info')" aria-label="Xem thông báo" class="p-2 rounded-btn bg-bg-sub border border-border-warm text-text-main card-hover relative transition-all duration-200 active:scale-[0.98]" type="button">
-        <span class="material-symbols-outlined">notifications</span>
-      </button>
+      <!-- Chuông & Dropdown Thông báo (Thành viên 4) -->
+      <div id="notif-wrapper" class="relative">
+        <button id="notif-btn" onclick="toggleNotifDropdown(event)" aria-label="Xem thông báo" class="p-2 rounded-btn bg-bg-sub border border-border-warm text-text-main card-hover relative transition-all duration-200 active:scale-[0.98]" type="button">
+          <span class="material-symbols-outlined">notifications</span>
+          <?php if ($soThongBao > 0): ?>
+          <span class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center tnum shadow-sm">
+            <?= $soThongBao > 9 ? '9+' : $soThongBao ?>
+          </span>
+          <?php endif; ?>
+        </button>
+
+        <div id="notif-dropdown" class="hidden absolute top-full right-0 mt-2 w-72 sm:w-80 bg-bg-main border border-border-warm rounded-card shadow-lg z-50 overflow-hidden">
+          <div class="px-4 py-2.5 bg-bg-sub/70 border-b border-border-warm flex items-center justify-between">
+            <span class="text-xs font-bold text-text-main">Thông báo</span>
+            <?php if ($soThongBao > 0): ?>
+            <span class="px-2 py-0.5 rounded-full bg-status-green-bg text-accent text-[10px] font-semibold tnum"><?= $soThongBao ?> mới</span>
+            <?php endif; ?>
+          </div>
+          <div class="max-h-64 overflow-y-auto divide-y divide-border-warm">
+            <?php if (empty($dsThongBao)): ?>
+            <div class="px-4 py-6 text-center text-xs text-text-sub">
+              <span class="material-symbols-outlined text-2xl block mx-auto mb-1 opacity-60">notifications_none</span>
+              Hiện chưa có thông báo mới.
+            </div>
+            <?php else: ?>
+              <?php foreach ($dsThongBao as $tb): ?>
+              <a href="<?= htmlspecialchars($tb['url']) ?>" class="px-4 py-2.5 hover:bg-bg-sub flex items-start gap-2.5 transition-colors">
+                <span class="material-symbols-outlined text-accent text-[18px] mt-0.5 shrink-0"><?= htmlspecialchars($tb['icon']) ?></span>
+                <div class="min-w-0">
+                  <p class="text-xs font-semibold text-text-main line-clamp-1"><?= htmlspecialchars($tb['tieuDe']) ?></p>
+                  <p class="text-[11px] text-text-sub mt-0.5 line-clamp-1"><?= htmlspecialchars($tb['moTa']) ?></p>
+                </div>
+              </a>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
 
       <?php if (!$nd): ?>
       <!-- Guest Login Button -->
@@ -169,13 +295,31 @@ $laChuTro = $nd_vaitro === 'ChuTro';
 </header>
 
 <script>
+function toggleNotifDropdown(e) {
+  if (e) e.stopPropagation();
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) dd.classList.toggle('hidden');
+  if (typeof closeAvatarDropdown === 'function') closeAvatarDropdown();
+}
+function closeNotifDropdown() {
+  const dd = document.getElementById('notif-dropdown');
+  if (dd) dd.classList.add('hidden');
+}
+
 document.addEventListener('click', (e) => {
   const wrapper = document.getElementById('user-avatar-wrapper');
   if (wrapper && !wrapper.contains(e.target)) {
     closeAvatarDropdown();
   }
+  const notifWrapper = document.getElementById('notif-wrapper');
+  if (notifWrapper && !notifWrapper.contains(e.target)) {
+    closeNotifDropdown();
+  }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeAvatarDropdown();
+  if (e.key === 'Escape') {
+    closeAvatarDropdown();
+    closeNotifDropdown();
+  }
 });
 </script>

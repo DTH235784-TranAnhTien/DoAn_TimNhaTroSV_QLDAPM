@@ -8,6 +8,7 @@ require_once __DIR__ . '/cauhinh/auth.php';
 $filterCoso      = $_GET['coso']      ?? ($_GET['kv'] ?? '');
 $filterLoaiphong = $_GET['loaiphong'] ?? '';
 $filterGia       = $_GET['ngansach']  ?? ($_GET['gia'] ?? '');
+$filterDientich  = $_GET['dientich']  ?? '';
 $filterTag       = $_GET['tag']       ?? '';
 $filterSapxep    = $_GET['sapxep']    ?? 'moi-nhat';
 $q               = trim($_GET['q']    ?? '');
@@ -58,6 +59,15 @@ if ($filterGia === 'duoi-1m2') {
     $where[] = "p.GiaThue > 1800000";
 }
 
+// 4b. Lọc theo diện tích (Thành viên 4)
+if ($filterDientich === 'duoi-15') {
+    $where[] = "p.DienTich > 0 AND p.DienTich < 15";
+} elseif ($filterDientich === '15-25') {
+    $where[] = "p.DienTich BETWEEN 15 AND 25";
+} elseif ($filterDientich === 'tren-25') {
+    $where[] = "p.DienTich > 25";
+}
+
 // 5. Lọc nhanh theo tags
 if ($filterTag === 'gan-truong') {
     $where[] = "(n.DiaChi LIKE '%Ung Văn Khiêm%' OR n.DiaChi LIKE '%Võ Thị Sáu%' OR n.DiaChi LIKE '%Ung Van Khiem%')";
@@ -100,6 +110,13 @@ if (!empty($params)) {
 
 $dsPhong = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 $tongPhong = count($dsPhong);
+
+// Phân trang danh sách phòng (Thành viên 4)
+$soPhongMoiTrang = 6;
+$tongTrang = max(1, (int)ceil($tongPhong / $soPhongMoiTrang));
+$trangSo = max(1, min($tongTrang, (int)($_GET['trang'] ?? 1)));
+$viTriBatDau = ($trangSo - 1) * $soPhongMoiTrang;
+$dsPhongHienThi = array_slice($dsPhong, $viTriBatDau, $soPhongMoiTrang);
 
 // KPI tổng phòng đã duyệt trên toàn hệ thống
 $kpiTong = (int)($conn->query("SELECT COUNT(*) AS c FROM PhongTro WHERE TrangThaiDuyet = 'DaDuyet' AND TrangThai = 'ConPhong'")->fetch_assoc()['c'] ?? 0);
@@ -206,7 +223,7 @@ include_once __DIR__ . '/dungchung/header.php';
     <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
       
       <!-- 1. Cơ sở học tập / Khu vực -->
-      <div class="md:col-span-3">
+      <div class="md:col-span-2">
         <label class="block text-xs font-semibold text-text-main mb-1">Cơ sở / Khu vực</label>
         <select name="coso" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
           <option value="">Tất cả khu vực quanh AGU</option>
@@ -221,7 +238,7 @@ include_once __DIR__ . '/dungchung/header.php';
       </div>
 
       <!-- 2. Loại phòng -->
-      <div class="md:col-span-3">
+      <div class="md:col-span-2">
         <label class="block text-xs font-semibold text-text-main mb-1">Loại phòng</label>
         <select name="loaiphong" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none">
           <option value="">Tất cả loại hình phòng</option>
@@ -240,6 +257,17 @@ include_once __DIR__ . '/dungchung/header.php';
           <option value="duoi-1m2" <?= $filterGia==='duoi-1m2'?'selected':'' ?>>Dưới 1.2 triệu</option>
           <option value="1m2-1m8" <?= $filterGia==='1m2-1m8'?'selected':'' ?>>1.2 – 1.8 triệu</option>
           <option value="tren-1m8" <?= $filterGia==='tren-1m8'?'selected':'' ?>>Trên 1.8 triệu</option>
+        </select>
+      </div>
+
+      <!-- 3b. Diện tích -->
+      <div class="md:col-span-2">
+        <label class="block text-xs font-semibold text-text-main mb-1">Diện tích</label>
+        <select name="dientich" class="w-full bg-bg-main border border-border-warm rounded-card px-3 py-2.5 text-sm text-text-main focus:border-accent outline-none tnum">
+          <option value="">Mọi diện tích</option>
+          <option value="duoi-15" <?= $filterDientich==='duoi-15'?'selected':'' ?>>Dưới 15 m²</option>
+          <option value="15-25" <?= $filterDientich==='15-25'?'selected':'' ?>>15 – 25 m²</option>
+          <option value="tren-25" <?= $filterDientich==='tren-25'?'selected':'' ?>>Trên 25 m²</option>
         </select>
       </div>
 
@@ -280,7 +308,7 @@ include_once __DIR__ . '/dungchung/header.php';
         Khu trọ nữ riêng
       </a>
 
-      <?php if ($q || $filterCoso || $filterLoaiphong || $filterGia || $filterTag): ?>
+      <?php if ($q || $filterCoso || $filterLoaiphong || $filterGia || $filterDientich || $filterTag): ?>
       <a href="/DoAn_TimNhaTroSV_QLDAPM/danhsach.php" class="px-3 py-1 rounded-card bg-status-red-bg text-status-red-text border border-status-red-border font-semibold flex items-center gap-1 ml-auto">
         <span class="material-symbols-outlined text-[14px]">close</span>Đặt lại bộ lọc
       </a>
@@ -323,11 +351,14 @@ include_once __DIR__ . '/dungchung/header.php';
       <div class="flex items-center justify-between gap-3 text-xs bg-bg-main p-3 rounded-card border border-border-warm shadow-sm">
         <span class="font-bold text-text-main flex items-center gap-1.5">
           <span class="material-symbols-outlined text-accent text-[18px]">real_estate_agent</span>
-          Tìm thấy <span class="text-accent tnum font-semibold"><?= count($dsPhong) ?></span> phòng trọ
+          Tìm thấy <span class="text-accent tnum font-semibold"><?= $tongPhong ?></span> phòng trọ
+          <?php if ($tongTrang > 1): ?>
+          <span class="text-text-sub font-normal tnum">(Trang <?= $trangSo ?>/<?= $tongTrang ?>)</span>
+          <?php endif; ?>
         </span>
         <div class="flex items-center gap-2">
           <label for="sort-select" class="text-text-sub font-medium shrink-0">Sắp xếp:</label>
-          <select id="sort-select" onchange="const u = new URL(window.location.href); u.searchParams.set('sapxep', this.value); window.location.href = u.toString();" 
+          <select id="sort-select" onchange="const u = new URL(window.location.href); u.searchParams.set('sapxep', this.value); u.searchParams.delete('trang'); window.location.href = u.toString();" 
                   class="bg-bg-sub border border-border-warm text-text-main rounded-btn px-2.5 py-1 text-xs focus:outline-none focus:border-accent cursor-pointer font-medium">
             <option value="moi-nhat" <?= $filterSapxep === 'moi-nhat' ? 'selected' : '' ?>>Mới nhất</option>
             <option value="gia-tang" <?= $filterSapxep === 'gia-tang' ? 'selected' : '' ?>>Giá tăng dần</option>
@@ -338,7 +369,7 @@ include_once __DIR__ . '/dungchung/header.php';
 
       <!-- DANH SÁCH PHÒNG THỰC TỪ DATABASE -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <?php foreach ($dsPhong as $p):
+        <?php foreach ($dsPhongHienThi as $p):
           $gia    = number_format($p['GiaThue'], 0, ',', '.');
           $dien   = $p['DienTich'] ? $p['DienTich'] . ' m²' : '—';
           $diachi = $p['DiaChi'] ?? '—';
@@ -417,6 +448,38 @@ include_once __DIR__ . '/dungchung/header.php';
         </article>
         <?php endforeach; ?>
       </div>
+
+      <?php if ($tongTrang > 1):
+        $queryBase = $_GET;
+        $buildPageUrl = function (int $p) use ($queryBase): string {
+            $queryBase['trang'] = $p;
+            return '/DoAn_TimNhaTroSV_QLDAPM/danhsach.php?' . http_build_query($queryBase);
+        };
+      ?>
+      <!-- PHÂN TRANG (Thành viên 4) -->
+      <nav aria-label="Phân trang danh sách phòng" class="flex flex-wrap items-center justify-center gap-1.5 pt-2">
+        <?php if ($trangSo > 1): ?>
+        <a href="<?= htmlspecialchars($buildPageUrl($trangSo - 1)) ?>"
+           class="px-3 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main text-xs font-semibold card-hover inline-flex items-center gap-1">
+          <span class="material-symbols-outlined text-[15px]">chevron_left</span>Trước
+        </a>
+        <?php endif; ?>
+
+        <?php for ($i = 1; $i <= $tongTrang; $i++): ?>
+        <a href="<?= htmlspecialchars($buildPageUrl($i)) ?>"
+           class="w-8 h-8 rounded-btn text-xs font-semibold inline-flex items-center justify-center transition-all tnum <?= $i === $trangSo ? 'bg-accent text-white shadow-sm' : 'border border-border-warm bg-bg-main text-text-main card-hover' ?>">
+          <?= $i ?>
+        </a>
+        <?php endfor; ?>
+
+        <?php if ($trangSo < $tongTrang): ?>
+        <a href="<?= htmlspecialchars($buildPageUrl($trangSo + 1)) ?>"
+           class="px-3 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main text-xs font-semibold card-hover inline-flex items-center gap-1">
+          Sau<span class="material-symbols-outlined text-[15px]">chevron_right</span>
+        </a>
+        <?php endif; ?>
+      </nav>
+      <?php endif; ?>
       <?php endif; ?>
     </div>
 
