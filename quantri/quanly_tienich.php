@@ -4,6 +4,11 @@ $trangHienTai = 'admin';
 require_once __DIR__ . '/../cauhinh/auth.php';
 require_once __DIR__ . '/../cauhinh/database.php';
 
+/** @var mysqli|null $conn */
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die('Không thể kết nối cơ sở dữ liệu.');
+}
+
 yeuCauVaiTro('QuanTriVien');
 
 $nd = nguoiDungHienTai();
@@ -23,7 +28,7 @@ function chuanHoaAnhAdmin(?string $path, string $macDinh = '/DoAn_TimNhaTroSV_QL
     return '/DoAn_TimNhaTroSV_QLDAPM/' . ltrim($path, './');
 }
 
-// ================= XỬ LÝ FORM POST (TIỆN ÍCH) =================
+// ================= XỬ LÝ FORM POST (TIỆN ÍCH & NHÃN DANH MỤC) =================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!kiemTraCsrfToken($_POST['csrf_token'] ?? '')) {
         datThongBao('danger', 'Phiên làm việc không hợp lệ (lỗi CSRF). Vui lòng thử lại.');
@@ -33,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $hanhDong = $_POST['hanh_dong'] ?? '';
 
-    // 1. Thêm hoặc cập nhật Tiện ích
+    // 1. Thêm hoặc cập nhật Tiện ích (TienIch)
     if ($hanhDong === 'luu_tien_ich') {
         $maTienIch  = (int)($_POST['ma_tien_ich'] ?? 0);
         $tenTienIch = trim($_POST['ten_tien_ich'] ?? '');
@@ -48,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
 
-        // Kiểm tra trùng TenTienIch (ràng buộc UNIQUE trong CSDL)
         $chk = $conn->prepare("SELECT MaTienIch FROM TienIch WHERE TenTienIch = ? AND MaTienIch != ?");
         $chk->bind_param('si', $tenTienIch, $maTienIch);
         $chk->execute();
@@ -74,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // 2. Xóa Tiện ích
+    // 2. Xóa Tiện ích (TienIch)
     if ($hanhDong === 'xoa_tien_ich') {
         $maTienIch = (int)($_POST['ma_tien_ich'] ?? 0);
         if ($maTienIch > 0) {
@@ -86,9 +90,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: $redirectUrl");
         exit();
     }
+
+    // 3. Thêm hoặc cập nhật Nhãn danh mục (NhanDanhMuc)
+    if ($hanhDong === 'luu_nhan') {
+        $maNhan  = (int)($_POST['ma_nhan'] ?? 0);
+        $tenNhan = trim($_POST['ten_nhan'] ?? '');
+        $tuKhoa  = trim($_POST['tu_khoa_nhan_dien'] ?? '');
+
+        if ($tenNhan === '') {
+            datThongBao('danger', 'Vui lòng nhập tên nhãn danh mục.');
+            header("Location: $redirectUrl");
+            exit();
+        }
+
+        if (mb_strlen($tenNhan, 'UTF-8') > 50) {
+            datThongBao('danger', 'Tên nhãn danh mục tối đa 50 ký tự.');
+            header("Location: $redirectUrl");
+            exit();
+        }
+
+        $chk = $conn->prepare("SELECT MaNhan FROM NhanDanhMuc WHERE TenNhan = ? AND MaNhan != ?");
+        $chk->bind_param('si', $tenNhan, $maNhan);
+        $chk->execute();
+        if ($chk->get_result()->num_rows > 0) {
+            datThongBao('danger', "Nhãn danh mục '$tenNhan' đã tồn tại trong hệ thống.");
+            header("Location: $redirectUrl");
+            exit();
+        }
+
+        if ($maNhan > 0) {
+            $stmt = $conn->prepare("UPDATE NhanDanhMuc SET TenNhan = ?, TuKhoaNhanDien = ? WHERE MaNhan = ?");
+            $stmt->bind_param('ssi', $tenNhan, $tuKhoa, $maNhan);
+            $stmt->execute();
+            datThongBao('success', "Đã cập nhật nhãn #$maNhan ($tenNhan) thành công!");
+        } else {
+            $stmt = $conn->prepare("INSERT INTO NhanDanhMuc (TenNhan, TuKhoaNhanDien) VALUES (?, ?)");
+            $stmt->bind_param('ss', $tenNhan, $tuKhoa);
+            $stmt->execute();
+            datThongBao('success', "Đã thêm nhãn danh mục '$tenNhan' thành công!");
+        }
+
+        header("Location: $redirectUrl");
+        exit();
+    }
+
+    // 4. Xóa Nhãn danh mục (NhanDanhMuc)
+    if ($hanhDong === 'xoa_nhan') {
+        $maNhan = (int)($_POST['ma_nhan'] ?? 0);
+        if ($maNhan > 0) {
+            $stmt = $conn->prepare("DELETE FROM NhanDanhMuc WHERE MaNhan = ?");
+            $stmt->bind_param('i', $maNhan);
+            $stmt->execute();
+            datThongBao('info', "Đã xóa nhãn danh mục #$maNhan khỏi hệ thống.");
+        }
+        header("Location: $redirectUrl");
+        exit();
+    }
+
+    // 5. Quét & gắn nhãn tự động cho toàn bộ phòng trọ (PhongTro_Nhan)
+    if ($hanhDong === 'quet_gan_nhan') {
+        $resAllNhan = $conn->query("SELECT MaNhan, TuKhoaNhanDien FROM NhanDanhMuc WHERE TuKhoaNhanDien IS NOT NULL AND TRIM(TuKhoaNhanDien) != ''");
+        $resAllPhong = $conn->query("SELECT MaPhong, TenPhong, MoTa FROM PhongTro");
+
+        $dsNhanQuet = $resAllNhan ? $resAllNhan->fetch_all(MYSQLI_ASSOC) : [];
+        $dsPhongQuet = $resAllPhong ? $resAllPhong->fetch_all(MYSQLI_ASSOC) : [];
+
+        if (empty($dsNhanQuet) || empty($dsPhongQuet)) {
+            datThongBao('warning', 'Chưa có đủ dữ liệu nhãn từ khóa hoặc phòng trọ để quét tự động.');
+            header("Location: $redirectUrl");
+            exit();
+        }
+
+        $stmtGan = $conn->prepare("INSERT IGNORE INTO PhongTro_Nhan (MaPhong, MaNhan) VALUES (?, ?)");
+        $soTagMoi = 0;
+
+        foreach ($dsNhanQuet as $nhanItem) {
+            $maNhanItem = (int)$nhanItem['MaNhan'];
+            $dsTuKhoa = array_filter(array_map('trim', preg_split('/[,;|]+/', $nhanItem['TuKhoaNhanDien'])));
+            if (empty($dsTuKhoa)) {
+                continue;
+            }
+
+            foreach ($dsPhongQuet as $phongItem) {
+                $maPhongItem = (int)$phongItem['MaPhong'];
+                $vanBan = ($phongItem['TenPhong'] ?? '') . ' ' . ($phongItem['MoTa'] ?? '');
+
+                foreach ($dsTuKhoa as $kw) {
+                    if ($kw !== '' && mb_stripos($vanBan, $kw, 0, 'UTF-8') !== false) {
+                        $stmtGan->bind_param('ii', $maPhongItem, $maNhanItem);
+                        $stmtGan->execute();
+                        if ($stmtGan->affected_rows > 0) {
+                            $soTagMoi++;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        datThongBao('success', "Hoàn tất quét từ khóa: đã tự động gắn thêm $soTagMoi lượt nhãn cho các phòng trọ phù hợp!");
+        header("Location: $redirectUrl");
+        exit();
+    }
 }
 
-// ================= TRUY VẤN DANH SÁCH TIỆN ÍCH =================
+// ================= TRUY VẤN DANH SÁCH TIỆN ÍCH & NHÃN DANH MỤC =================
 $resTienIch = $conn->query("
     SELECT t.MaTienIch, t.TenTienIch, t.Icon,
            COUNT(pt.MaPhong) AS SoPhongSuDung
@@ -98,6 +204,16 @@ $resTienIch = $conn->query("
     ORDER BY t.MaTienIch DESC
 ");
 $dsTienIch = $resTienIch ? $resTienIch->fetch_all(MYSQLI_ASSOC) : [];
+
+$resNhan = $conn->query("
+    SELECT n.MaNhan, n.TenNhan, n.TuKhoaNhanDien,
+           COUNT(pn.MaPhong) AS SoPhongGanNhan
+    FROM NhanDanhMuc n
+    LEFT JOIN PhongTro_Nhan pn ON n.MaNhan = pn.MaNhan
+    GROUP BY n.MaNhan, n.TenNhan, n.TuKhoaNhanDien
+    ORDER BY n.MaNhan DESC
+");
+$dsNhan = $resNhan ? $resNhan->fetch_all(MYSQLI_ASSOC) : [];
 
 $flashMsg = layThongBao();
 include_once __DIR__ . '/../dungchung/header.php';
@@ -154,7 +270,7 @@ include_once __DIR__ . '/../dungchung/header.php';
     </aside>
 
     <!-- CONTENT PHẢI -->
-    <main class="min-w-0 space-y-5">
+    <main class="min-w-0 space-y-6">
       <?php if ($flashMsg):
         $fLoai = $flashMsg['loai'] ?? 'info';
         $fClass = $fLoai === 'success'
@@ -209,25 +325,27 @@ include_once __DIR__ . '/../dungchung/header.php';
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($dsTienIch as $ti): ?>
+                <?php foreach ($dsTienIch as $ti):
+                  $jsonTi = json_encode($ti, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+                ?>
                 <tr class="tienich-row border-t border-border-warm hover:bg-bg-sub/40 text-xs"
-                    data-search="<?= strtolower(htmlspecialchars($ti['TenTienIch'] . ' ' . $ti['Icon'])) ?>">
-                  <td class="py-2.5 px-3 font-mono font-bold text-text-main">#<?= $ti['MaTienIch'] ?></td>
-                  <td class="py-2.5 px-3 font-semibold text-text-main"><?= htmlspecialchars($ti['TenTienIch']) ?></td>
+                    data-search="<?= strtolower(htmlspecialchars($ti['TenTienIch'] . ' ' . $ti['Icon'], ENT_QUOTES, 'UTF-8')) ?>">
+                  <td class="py-2.5 px-3 font-mono font-bold text-text-main">#<?= (int)$ti['MaTienIch'] ?></td>
+                  <td class="py-2.5 px-3 font-semibold text-text-main"><?= htmlspecialchars($ti['TenTienIch'], ENT_QUOTES, 'UTF-8') ?></td>
                   <td class="py-2.5 px-3 font-mono text-text-sub">
-                    <span class="px-2 py-0.5 rounded bg-bg-sub border border-border-warm"><?= htmlspecialchars($ti['Icon']) ?></span>
+                    <span class="px-2 py-0.5 rounded bg-bg-sub border border-border-warm"><?= htmlspecialchars($ti['Icon'], ENT_QUOTES, 'UTF-8') ?></span>
                   </td>
                   <td class="py-2.5 px-3 tnum text-text-sub"><?= (int)$ti['SoPhongSuDung'] ?> phòng</td>
                   <td class="py-2.5 px-3">
                     <div class="flex items-center justify-end gap-1.5">
-                      <button type="button" onclick='editTienIch(<?= htmlspecialchars(json_encode($ti), ENT_QUOTES, "UTF-8") ?>)' title="Sửa tiện ích"
+                      <button type="button" onclick='editTienIch(<?= $jsonTi ?>)' title="Sửa tiện ích"
                         class="w-7 h-7 rounded-btn border border-border-warm bg-bg-main text-text-main flex items-center justify-center hover:border-accent">
                         <span class="material-symbols-outlined text-[16px]">edit</span>
                       </button>
                       <form method="POST" class="inline" onsubmit="return confirm('Xóa tiện ích này sẽ gỡ liên kết khỏi các phòng trọ đang chọn. Bạn chắc chắn muốn xóa?')">
-                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="hanh_dong" value="xoa_tien_ich">
-                        <input type="hidden" name="ma_tien_ich" value="<?= $ti['MaTienIch'] ?>">
+                        <input type="hidden" name="ma_tien_ich" value="<?= (int)$ti['MaTienIch'] ?>">
                         <button type="submit" title="Xóa tiện ích"
                           class="w-7 h-7 rounded-btn border border-status-red-border bg-status-red-bg text-status-red-text flex items-center justify-center">
                           <span class="material-symbols-outlined text-[16px]">delete</span>
@@ -244,13 +362,102 @@ include_once __DIR__ . '/../dungchung/header.php';
         </div>
       </section>
 
-      <!-- PHẦN 2: NHÃN DANH MỤC TỰ ĐỘNG (NhanDanhMuc - Hoàn thiện ở phiên tiếp theo) -->
-      <section class="bg-bg-sub rounded-card border border-border-warm border-dashed p-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 class="text-sm font-bold text-text-main">Nhãn danh mục & Từ khóa nhận diện tự động</h2>
-          <p class="text-xs text-text-sub mt-0.5">Khu vực quản lý bảng <code class="font-mono">NhanDanhMuc</code> (gắn tag tự động theo mô tả phòng trọ).</p>
+      <!-- PHẦN 2: NHÃN DANH MỤC TỰ ĐỘNG (NhanDanhMuc) -->
+      <section class="bg-bg-main rounded-card border border-border-warm overflow-hidden">
+        <div class="bg-bg-sub px-5 py-3.5 border-b border-border-warm flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-text-main">Nhãn danh mục & Từ khóa nhận diện tự động</h2>
+            <p class="text-xs text-text-sub mt-0.5">Quản lý bộ nhãn và từ khóa đối chiếu với tiêu đề, mô tả phòng trọ</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-2.5 py-1 rounded-full bg-bg-main border border-border-warm text-xs font-semibold text-text-main tnum"><?= count($dsNhan) ?> nhãn</span>
+            <form method="POST" class="inline" onsubmit="return confirm('Hệ thống sẽ quét toàn bộ phòng trọ hiện có và tự động gắn nhãn khớp từ khóa. Tiếp tục?')">
+              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+              <input type="hidden" name="hanh_dong" value="quet_gan_nhan">
+              <button type="submit" class="flex items-center gap-1.5 px-3 py-1.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs card-hover">
+                <span class="material-symbols-outlined text-[16px] text-accent">auto_fix_high</span>Quét gắn nhãn tự động
+              </button>
+            </form>
+            <button type="button" onclick="openNhanModal()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-btn bg-accent text-white font-semibold text-xs transition-all duration-200 active:scale-[0.98]">
+              <span class="material-symbols-outlined text-[16px]">new_label</span>Thêm nhãn
+            </button>
+          </div>
         </div>
-        <span class="px-2.5 py-1 rounded-full bg-status-amber-bg text-status-amber-text text-xs font-semibold">Đang cập nhật</span>
+
+        <div class="p-5 space-y-4">
+          <div class="flex items-center gap-2 bg-bg-sub border border-border-warm rounded-btn px-3 py-2 max-w-sm">
+            <span class="material-symbols-outlined text-text-sub text-[18px]">search</span>
+            <input id="search-nhan" type="search" oninput="filterNhan()" placeholder="Tìm tên nhãn hoặc từ khóa nhận diện..." class="bg-transparent outline-none text-xs text-text-main w-full">
+          </div>
+
+          <?php if (empty($dsNhan)): ?>
+          <div class="py-12 text-center text-text-sub space-y-2 border border-dashed border-border-warm rounded-card">
+            <span class="material-symbols-outlined text-4xl block mx-auto text-accent">label</span>
+            <p class="text-sm font-semibold text-text-main">Chưa có nhãn danh mục tự động nào</p>
+            <p class="text-xs">Bấm "Thêm nhãn" để tạo các thẻ như Gác lửng, Giờ tự do, Không chung chủ, Gần ĐH An Giang...</p>
+          </div>
+          <?php else: ?>
+          <div class="overflow-x-auto border border-border-warm rounded-card">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-bg-sub">
+                <tr class="text-[11px] font-bold uppercase tracking-wider text-text-sub border-b border-border-warm">
+                  <th class="py-2.5 px-3 w-20">Mã</th>
+                  <th class="py-2.5 px-3 w-48">Tên nhãn</th>
+                  <th class="py-2.5 px-3">Từ khóa nhận diện</th>
+                  <th class="py-2.5 px-3 w-32 tnum">Phòng đã gắn</th>
+                  <th class="py-2.5 px-3 w-28 text-right">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php foreach ($dsNhan as $nh):
+                  $jsonNh = json_encode($nh, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+                  $dsKwHienThi = array_filter(array_map('trim', preg_split('/[,;|]+/', (string)($nh['TuKhoaNhanDien'] ?? ''))));
+                ?>
+                <tr class="nhan-row border-t border-border-warm hover:bg-bg-sub/40 text-xs"
+                    data-search="<?= strtolower(htmlspecialchars($nh['TenNhan'] . ' ' . ($nh['TuKhoaNhanDien'] ?? ''), ENT_QUOTES, 'UTF-8')) ?>">
+                  <td class="py-2.5 px-3 font-mono font-bold text-text-main">#<?= (int)$nh['MaNhan'] ?></td>
+                  <td class="py-2.5 px-3">
+                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-status-green-bg text-accent font-semibold">
+                      <span class="material-symbols-outlined text-[13px]">sell</span>
+                      <?= htmlspecialchars($nh['TenNhan'], ENT_QUOTES, 'UTF-8') ?>
+                    </span>
+                  </td>
+                  <td class="py-2.5 px-3">
+                    <?php if (!empty($dsKwHienThi)): ?>
+                      <div class="flex flex-wrap gap-1">
+                        <?php foreach ($dsKwHienThi as $kwItem): ?>
+                          <span class="px-2 py-0.5 rounded bg-bg-sub border border-border-warm text-text-sub font-mono text-[11px]"><?= htmlspecialchars($kwItem, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endforeach; ?>
+                      </div>
+                    <?php else: ?>
+                      <span class="text-text-sub italic">Chưa thiết lập từ khóa</span>
+                    <?php endif; ?>
+                  </td>
+                  <td class="py-2.5 px-3 tnum text-text-sub"><?= (int)$nh['SoPhongGanNhan'] ?> phòng</td>
+                  <td class="py-2.5 px-3">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <button type="button" onclick='editNhan(<?= $jsonNh ?>)' title="Sửa nhãn"
+                        class="w-7 h-7 rounded-btn border border-border-warm bg-bg-main text-text-main flex items-center justify-center hover:border-accent">
+                        <span class="material-symbols-outlined text-[16px]">edit</span>
+                      </button>
+                      <form method="POST" class="inline" onsubmit="return confirm('Xóa nhãn này sẽ gỡ thẻ khỏi các phòng trọ liên quan. Bạn chắc chắn muốn xóa?')">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                        <input type="hidden" name="hanh_dong" value="xoa_nhan">
+                        <input type="hidden" name="ma_nhan" value="<?= (int)$nh['MaNhan'] ?>">
+                        <button type="submit" title="Xóa nhãn"
+                          class="w-7 h-7 rounded-btn border border-status-red-border bg-status-red-bg text-status-red-text flex items-center justify-center">
+                          <span class="material-symbols-outlined text-[16px]">delete</span>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+          <?php endif; ?>
+        </div>
       </section>
     </main>
   </div>
@@ -266,7 +473,7 @@ include_once __DIR__ . '/../dungchung/header.php';
       </button>
     </div>
     <form method="POST" class="p-5 space-y-3.5">
-      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
       <input type="hidden" name="hanh_dong" value="luu_tien_ich">
       <input type="hidden" id="tienich-id" name="ma_tien_ich" value="0">
 
@@ -286,6 +493,42 @@ include_once __DIR__ . '/../dungchung/header.php';
       <div class="flex items-center justify-end gap-2 pt-2">
         <button type="button" onclick="closeTienIchModal()" class="px-4 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs">Hủy</button>
         <button type="submit" class="px-4 py-2 rounded-btn bg-accent text-white font-semibold text-xs">Lưu tiện ích</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL THÊM / SỬA NHÃN DANH MỤC -->
+<div id="nhan-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+  <div class="bg-bg-main rounded-card border border-border-warm shadow-lg w-full max-w-md">
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-border-warm">
+      <h2 id="nhan-modal-title" class="text-sm font-bold text-text-main">Thêm nhãn danh mục mới</h2>
+      <button type="button" onclick="closeNhanModal()" class="w-7 h-7 rounded-btn border border-border-warm flex items-center justify-center text-text-sub hover:text-text-main">
+        <span class="material-symbols-outlined text-[18px]">close</span>
+      </button>
+    </div>
+    <form method="POST" class="p-5 space-y-3.5">
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+      <input type="hidden" name="hanh_dong" value="luu_nhan">
+      <input type="hidden" id="nhan-id" name="ma_nhan" value="0">
+
+      <div>
+        <label class="text-xs font-semibold text-text-main block mb-1">Tên nhãn hiển thị <span class="text-rose-500">*</span></label>
+        <input id="nhan-ten" name="ten_nhan" type="text" maxlength="50" required placeholder="VD: Gác lửng, Giờ tự do, Không chung chủ..."
+          class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
+      </div>
+
+      <div>
+        <label class="text-xs font-semibold text-text-main block mb-1">Từ khóa nhận diện tự động</label>
+        <textarea id="nhan-tukhoa" name="tu_khoa_nhan_dien" rows="3" maxlength="255"
+          placeholder="Nhập các từ khóa cách nhau bằng dấu phẩy. VD: gác lửng, gác đúc, có gác"
+          class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent"></textarea>
+        <p class="text-[11px] text-text-sub mt-1">Phân tách nhiều từ khóa bằng dấu phẩy (<code class="font-mono">,</code>). Không phân biệt chữ hoa/thường khi quét.</p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button type="button" onclick="closeNhanModal()" class="px-4 py-2 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-xs">Hủy</button>
+        <button type="submit" class="px-4 py-2 rounded-btn bg-accent text-white font-semibold text-xs">Lưu nhãn</button>
       </div>
     </form>
   </div>
@@ -318,6 +561,34 @@ include_once __DIR__ . '/../dungchung/header.php';
 
   function closeTienIchModal() {
     document.getElementById('tienich-modal').classList.add('hidden');
+  }
+
+  function filterNhan() {
+    const q = (document.getElementById('search-nhan')?.value || '').toLowerCase();
+    document.querySelectorAll('.nhan-row').forEach(r => {
+      const text = r.getAttribute('data-search') || '';
+      r.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
+  }
+
+  function openNhanModal() {
+    document.getElementById('nhan-modal-title').textContent = 'Thêm nhãn danh mục mới';
+    document.getElementById('nhan-id').value = '0';
+    document.getElementById('nhan-ten').value = '';
+    document.getElementById('nhan-tukhoa').value = '';
+    document.getElementById('nhan-modal').classList.remove('hidden');
+  }
+
+  function editNhan(nh) {
+    document.getElementById('nhan-modal-title').textContent = 'Sửa nhãn danh mục — ' + nh.TenNhan;
+    document.getElementById('nhan-id').value = nh.MaNhan;
+    document.getElementById('nhan-ten').value = nh.TenNhan;
+    document.getElementById('nhan-tukhoa').value = nh.TuKhoaNhanDien || '';
+    document.getElementById('nhan-modal').classList.remove('hidden');
+  }
+
+  function closeNhanModal() {
+    document.getElementById('nhan-modal').classList.add('hidden');
   }
 </script>
 
