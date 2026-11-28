@@ -3,6 +3,9 @@ $tieuDeTrang = 'Cổng Quản Trị — CampusNest AGU';
 $trangHienTai = 'admin';
 require_once __DIR__ . '/../cauhinh/auth.php';
 require_once __DIR__ . '/../cauhinh/database.php';
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die('Không thể kết nối cơ sở dữ liệu.');
+}
 
 if (!daDangNhap()) {
     header('Location: /DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php?tb=' . urlencode('Vui lòng đăng nhập để tiếp tục.'));
