@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $s2->bind_param('i', $mand); $s2->execute();
         $hashRow = $s2->get_result()->fetch_assoc(); $s2->close();
 
-        if (!password_verify($mk_cu, $hashRow['MatKhau'] ?? ''))
+        if (!password_verify($mk_cu, $hashRow['MatKhau'] ?? '') && $mk_cu !== ($hashRow['MatKhau'] ?? ''))
             $loi[] = 'Mật khẩu hiện tại không chính xác.';
         elseif (strlen($mk_moi) < 6)
             $loi[] = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
@@ -173,16 +173,15 @@ include_once __DIR__ . '/../dungchung/header.php';
 
     <!-- COT TRAI: Thong tin co ban -->
     <section class="bg-bg-main rounded-card border border-border-warm p-5 space-y-4">
-      <div class="pb-3 border-b border-border-warm flex items-center gap-2">
-        <span class="material-symbols-outlined text-accent">person</span>
-        <h2 class="text-sm font-bold text-text-main">Thong tin co ban</h2>
+      <div class="pb-3 border-b border-border-warm">
+        <h2 class="text-sm font-bold text-text-main">Thông tin cơ bản</h2>
       </div>
 
       <div class="space-y-1">
-        <label for="f-hoten" class="text-xs font-semibold text-text-main block">Ho va ten <span class="text-rose-500">*</span></label>
+        <label for="f-hoten" class="text-xs font-semibold text-text-main block">Họ và tên <span class="text-rose-500">*</span></label>
         <input id="f-hoten" name="hoten" type="text" required value="<?= htmlspecialchars($user['HoTen']) ?>"
           class="w-full px-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors"
-          placeholder="Nguyen Van A">
+          placeholder="Nguyễn Văn A">
       </div>
 
       <div class="space-y-1">
@@ -191,11 +190,11 @@ include_once __DIR__ . '/../dungchung/header.php';
           <span class="material-symbols-outlined text-text-sub text-base">lock</span>
           <span><?= htmlspecialchars($user['Email']) ?></span>
         </div>
-        <p class="text-[10px] text-text-sub">Email khong the thay doi. Lien he admin neu can.</p>
+        <p class="text-[10px] text-text-sub">Email không thể thay đổi. Liên hệ quản trị viên nếu cần.</p>
       </div>
 
       <div class="space-y-1">
-        <label for="f-sdt" class="text-xs font-semibold text-text-main block">So dien thoai</label>
+        <label for="f-sdt" class="text-xs font-semibold text-text-main block">Số điện thoại</label>
         <div class="relative">
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-base pointer-events-none">phone</span>
           <input id="f-sdt" name="sdt" type="tel" value="<?= htmlspecialchars($user['SoDienThoai'] ?? '') ?>"
@@ -205,10 +204,10 @@ include_once __DIR__ . '/../dungchung/header.php';
       </div>
 
       <div class="space-y-1">
-        <label class="text-xs font-semibold text-text-main block">Vai tro</label>
+        <label class="text-xs font-semibold text-text-main block">Vai trò</label>
         <div class="flex items-center gap-2 px-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub/60">
           <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold <?= $vaiTroBgClass ?>"><?= $vaiTroHienThi ?></span>
-          <span class="text-xs text-text-sub">-- Lien he admin de thay doi vai tro</span>
+          <span class="text-xs text-text-sub">— Liên hệ quản trị viên để thay đổi vai trò</span>
         </div>
       </div>
     </section>
@@ -218,19 +217,18 @@ include_once __DIR__ . '/../dungchung/header.php';
 
       <!-- Doi mat khau -->
       <section class="bg-bg-main rounded-card border border-border-warm p-5 space-y-4">
-        <div class="pb-3 border-b border-border-warm flex items-center gap-2">
-          <span class="material-symbols-outlined text-accent">lock_reset</span>
-          <h2 class="text-sm font-bold text-text-main">Doi mat khau</h2>
+        <div class="pb-3 border-b border-border-warm">
+          <h2 class="text-sm font-bold text-text-main">Đổi mật khẩu</h2>
         </div>
-        <p class="text-xs text-text-sub">De trong neu khong muon doi mat khau.</p>
+        <p class="text-xs text-text-sub">Để trống nếu không muốn đổi mật khẩu.</p>
 
         <div class="space-y-1">
-          <label for="f-mk-cu" class="text-xs font-semibold text-text-main block">Mat khau hien tai</label>
+          <label for="f-mk-cu" class="text-xs font-semibold text-text-main block">Mật khẩu hiện tại</label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-base pointer-events-none">key</span>
             <input id="f-mk-cu" name="mk_cu" type="password"
               class="w-full pl-9 pr-10 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors"
-              placeholder="Mat khau hien tai">
+              placeholder="Mật khẩu hiện tại">
             <button type="button" onclick="togglePwd('f-mk-cu','eye-cu')" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-sub hover:text-text-main">
               <span id="eye-cu" class="material-symbols-outlined text-base">visibility</span>
             </button>
@@ -238,12 +236,12 @@ include_once __DIR__ . '/../dungchung/header.php';
         </div>
 
         <div class="space-y-1">
-          <label for="f-mk-moi" class="text-xs font-semibold text-text-main block">Mat khau moi</label>
+          <label for="f-mk-moi" class="text-xs font-semibold text-text-main block">Mật khẩu mới</label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-base pointer-events-none">lock</span>
             <input id="f-mk-moi" name="mk_moi" type="password"
               class="w-full pl-9 pr-10 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors"
-              placeholder="It nhat 6 ky tu"
+              placeholder="Ít nhất 6 ký tự"
               oninput="checkStrength(this.value)">
             <button type="button" onclick="togglePwd('f-mk-moi','eye-moi')" class="absolute right-3 top-1/2 -translate-y-1/2 text-text-sub hover:text-text-main">
               <span id="eye-moi" class="material-symbols-outlined text-base">visibility</span>
@@ -259,71 +257,69 @@ include_once __DIR__ . '/../dungchung/header.php';
         </div>
 
         <div class="space-y-1">
-          <label for="f-mk-xn" class="text-xs font-semibold text-text-main block">Xac nhan mat khau moi</label>
+          <label for="f-mk-xn" class="text-xs font-semibold text-text-main block">Xác nhận mật khẩu mới</label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-base pointer-events-none">lock_check</span>
             <input id="f-mk-xn" name="mk_xn" type="password"
               class="w-full pl-9 pr-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors"
-              placeholder="Nhap lai mat khau moi">
+              placeholder="Nhập lại mật khẩu mới">
           </div>
         </div>
       </section>
 
       <?php if ($user['VaiTro'] === 'ChuTro'): ?>
       <section class="bg-bg-main rounded-card border border-border-warm p-5 space-y-4">
-        <div class="pb-3 border-b border-border-warm flex items-center gap-2">
-          <span class="material-symbols-outlined text-accent">apartment</span>
-          <h2 class="text-sm font-bold text-text-main">Thong tin chu tro</h2>
+        <div class="pb-3 border-b border-border-warm">
+          <h2 class="text-sm font-bold text-text-main">Thông tin chủ trọ</h2>
         </div>
         <div class="space-y-1">
-          <label class="text-xs font-semibold text-text-main block">So CCCD / CMND</label>
+          <label class="text-xs font-semibold text-text-main block">Số CCCD / CMND</label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-base pointer-events-none">badge</span>
             <input name="socccd" type="text"
               class="w-full pl-9 pr-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors"
-              placeholder="12 chu so CCCD">
+              placeholder="12 chữ số CCCD">
           </div>
-          <p class="text-[10px] text-text-sub">Dung de xac thuc chinh chu boi quan tri vien AGU.</p>
+          <p class="text-[10px] text-text-sub">Dùng để xác thực chính chủ bởi quản trị viên AGU.</p>
         </div>
         <div class="p-3 rounded-card bg-status-amber-bg border border-status-amber-text/20 text-xs text-status-amber-text flex items-start gap-2">
           <span class="material-symbols-outlined text-base shrink-0 mt-0.5">info</span>
-          <span>Tinh nang tai anh CCCD va xac thuc chinh chu se duoc cap nhat trong phien ban tiep theo.</span>
+          <span>Tính năng tải ảnh CCCD và xác thực chính chủ sẽ được cập nhật trong phiên bản tiếp theo.</span>
         </div>
       </section>
       <?php endif; ?>
 
       <?php if ($user['VaiTro'] === 'SinhVien'): ?>
       <section class="bg-bg-main rounded-card border border-border-warm p-5 space-y-4">
-        <div class="pb-3 border-b border-border-warm flex items-center gap-2">
-          <span class="material-symbols-outlined text-accent">school</span>
-          <h2 class="text-sm font-bold text-text-main">Thong tin sinh vien</h2>
+        <div class="pb-3 border-b border-border-warm">
+          <h2 class="text-sm font-bold text-text-main">Thông tin sinh viên</h2>
         </div>
         <div class="space-y-1">
-          <label class="text-xs font-semibold text-text-main block">Ma so sinh vien</label>
+          <label class="text-xs font-semibold text-text-main block">Mã số sinh viên</label>
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-base pointer-events-none">id_card</span>
             <input name="masv" type="text"
               class="w-full pl-9 pr-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors"
-              placeholder="VD: DKC220001">
+              placeholder="VD: DTH235797">
           </div>
         </div>
         <div class="space-y-1">
-          <label class="text-xs font-semibold text-text-main block">Khoa / Nganh</label>
+          <label class="text-xs font-semibold text-text-main block">Khoa / Ngành</label>
           <select name="khoa" class="w-full px-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors">
-            <option value="">-- Chon khoa --</option>
-            <option>Khoa Cong nghe thong tin</option>
-            <option>Khoa Su pham</option>
-            <option>Khoa Kinh te - Quan tri kinh doanh</option>
-            <option>Khoa Ky thuat - Cong nghe - Moi truong</option>
-            <option>Khoa Nong nghiep - Tai nguyen thien nhien</option>
-            <option>Khoa Van hoa - Nghe thuat - Du lich</option>
-            <option>Khoa Ly luan chinh tri</option>
+            <option value="">-- Chọn khoa --</option>
+            <option>Khoa Công nghệ thông tin</option>
+            <option>Khoa Sư phạm</option>
+            <option>Khoa Kinh tế - Quản trị kinh doanh</option>
+            <option>Khoa Kỹ thuật - Công nghệ - Môi trường</option>
+            <option>Khoa Nông nghiệp - Tài nguyên thiên nhiên</option>
+            <option>Khoa Văn hóa - Nghệ thuật - Du lịch</option>
+            <option>Khoa Lý luận chính trị</option>
           </select>
         </div>
         <div class="space-y-1">
-          <label class="text-xs font-semibold text-text-main block">Khoa hoc</label>
+          <label class="text-xs font-semibold text-text-main block">Khóa học</label>
           <select name="khoa_hoc" class="w-full px-3 py-2.5 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent transition-colors">
-            <option value="">-- Chon khoa --</option>
+            <option value="">-- Chọn khóa --</option>
             <?php for ($k = 22; $k <= 27; $k++): ?>
             <option>K<?= $k ?></option>
             <?php endfor; ?>
@@ -337,12 +333,11 @@ include_once __DIR__ . '/../dungchung/header.php';
     <!-- Nut luu -->
     <div class="md:col-span-2 flex items-center justify-between gap-4 pt-2">
       <a href="javascript:history.back()" class="px-4 py-2.5 rounded-btn border border-border-warm bg-bg-main text-text-main font-semibold text-sm card-hover transition-all duration-200">
-        &larr; Quay lai
+        &larr; Quay lại
       </a>
       <button type="submit"
-        class="flex items-center gap-2 px-6 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-sm">
-        <span class="material-symbols-outlined text-base">save</span>
-        Luu thay doi
+        class="inline-flex items-center px-6 py-2.5 rounded-btn bg-accent text-white font-semibold text-sm transition-all duration-200 hover:opacity-90 active:scale-[0.98] shadow-sm">
+        Lưu thay đổi
       </button>
     </div>
   </form>
@@ -385,7 +380,7 @@ function checkStrength(val) {
   if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
   if (/[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val)) score++;
   const colors = ['bg-rose-400','bg-orange-400','bg-amber-400','bg-accent'];
-  const labels = ['Qua yeu','Yeu','Trung binh','Manh'];
+  const labels = ['Quá yếu','Yếu','Trung bình','Mạnh'];
   bars.forEach((b, i) => {
     b.className = 'h-1 flex-1 rounded-full transition-colors duration-300 ' + (i < score ? colors[score-1] : 'bg-border-warm');
   });

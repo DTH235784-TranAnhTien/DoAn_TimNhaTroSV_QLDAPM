@@ -37,7 +37,7 @@ if ($maPhong <= 0) {
 // 2. Kiểm tra quyền sở hữu phòng trọ
 if ($vaitro === 'QuanTriVien') {
     $stmtCheck = $conn->prepare("
-        SELECT p.*, n.TenNhaTro, n.DiaChi, n.MaChuTro 
+        SELECT p.*, n.TenNhaTro, n.DiaChi, n.ViDo, n.KinhDo, n.MaChuTro 
         FROM PhongTro p 
         JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro 
         WHERE p.MaPhong = ?
@@ -45,7 +45,7 @@ if ($vaitro === 'QuanTriVien') {
     $stmtCheck->bind_param('i', $maPhong);
 } else {
     $stmtCheck = $conn->prepare("
-        SELECT p.*, n.TenNhaTro, n.DiaChi, n.MaChuTro 
+        SELECT p.*, n.TenNhaTro, n.DiaChi, n.ViDo, n.KinhDo, n.MaChuTro 
         FROM PhongTro p 
         JOIN NhaTro n ON p.MaNhaTro = n.MaNhaTro 
         WHERE p.MaPhong = ? AND n.MaChuTro = ?
@@ -65,10 +65,10 @@ if (!$phong) {
 
 // 3. Lấy danh sách dãy nhà trọ của chủ này
 if ($vaitro === 'QuanTriVien') {
-    $stmtNT = $conn->query("SELECT MaNhaTro, TenNhaTro, DiaChi FROM NhaTro ORDER BY TenNhaTro ASC");
+    $stmtNT = $conn->query("SELECT MaNhaTro, TenNhaTro, DiaChi, ViDo, KinhDo FROM NhaTro ORDER BY TenNhaTro ASC");
     $dsNhaTro = $stmtNT ? $stmtNT->fetch_all(MYSQLI_ASSOC) : [];
 } else {
-    $stmtNT = $conn->prepare("SELECT MaNhaTro, TenNhaTro, DiaChi FROM NhaTro WHERE MaChuTro = ? ORDER BY TenNhaTro ASC");
+    $stmtNT = $conn->prepare("SELECT MaNhaTro, TenNhaTro, DiaChi, ViDo, KinhDo FROM NhaTro WHERE MaChuTro = ? ORDER BY TenNhaTro ASC");
     $stmtNT->bind_param('i', $mand);
     $stmtNT->execute();
     $dsNhaTro = $stmtNT->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -112,6 +112,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $chiPhiKhac = trim($_POST['chi_phi_khac'] ?? '');
     $moTa       = trim($_POST['mo_ta'] ?? '');
     $trangThai  = trim($_POST['trang_thai'] ?? 'ConPhong');
+    $diaChiNT   = trim($_POST['dia_chi_nha_tro'] ?? '');
+    $viDoNT     = ($_POST['vi_do'] ?? '') !== '' ? (float)$_POST['vi_do'] : null;
+    $kinhDoNT   = ($_POST['kinh_do'] ?? '') !== '' ? (float)$_POST['kinh_do'] : null;
 
     $anhChinhChon = (int)($_POST['anh_chinh'] ?? 0);
     $xoaAnhIds    = $_POST['xoa_anh'] ?? [];
@@ -161,6 +164,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         $stmtUp->execute();
         $stmtUp->close();
+
+        // A2. Cập nhật địa chỉ & tọa độ bản đồ của nhà trọ nếu chủ trọ chỉnh sửa
+        if ($diaChiNT !== '') {
+            if ($vaitro === 'QuanTriVien') {
+                $stmtNTUp = $conn->prepare("UPDATE NhaTro SET DiaChi = ?, ViDo = ?, KinhDo = ? WHERE MaNhaTro = ?");
+                $stmtNTUp->bind_param('sddi', $diaChiNT, $viDoNT, $kinhDoNT, $maNhaTro);
+            } else {
+                $stmtNTUp = $conn->prepare("UPDATE NhaTro SET DiaChi = ?, ViDo = ?, KinhDo = ? WHERE MaNhaTro = ? AND MaChuTro = ?");
+                $stmtNTUp->bind_param('sddii', $diaChiNT, $viDoNT, $kinhDoNT, $maNhaTro, $mand);
+            }
+            $stmtNTUp->execute();
+            $stmtNTUp->close();
+        }
 
         // B. Xóa ảnh được chọn xóa (nếu có)
         if (!empty($xoaAnhIds) && is_array($xoaAnhIds)) {
@@ -310,9 +326,13 @@ include_once __DIR__ . '/../dungchung/header.php';
         <!-- Thuộc dãy nhà trọ -->
         <div>
           <label class="block text-xs font-semibold text-text-sub mb-1.5">Thuộc dãy nhà trọ <span class="text-red-500">*</span></label>
-          <select name="ma_nha_tro" class="w-full text-xs px-3.5 py-2.5 rounded-btn border border-border-warm bg-bg-sub/30 focus:outline-accent font-medium">
+          <select id="sel_nha_tro" name="ma_nha_tro" class="w-full text-xs px-3.5 py-2.5 rounded-btn border border-border-warm bg-bg-sub/30 focus:outline-accent font-medium">
             <?php foreach ($dsNhaTro as $nt): ?>
-              <option value="<?= $nt['MaNhaTro'] ?>" <?= (int)$phong['MaNhaTro'] === (int)$nt['MaNhaTro'] ? 'selected' : '' ?>>
+              <option value="<?= $nt['MaNhaTro'] ?>"
+                      data-diachi="<?= htmlspecialchars($nt['DiaChi']) ?>"
+                      data-vido="<?= htmlspecialchars($nt['ViDo'] ?? '') ?>"
+                      data-kinhdo="<?= htmlspecialchars($nt['KinhDo'] ?? '') ?>"
+                      <?= (int)$phong['MaNhaTro'] === (int)$nt['MaNhaTro'] ? 'selected' : '' ?>>
                 <?= htmlspecialchars($nt['TenNhaTro']) ?> (<?= htmlspecialchars($nt['DiaChi']) ?>)
               </option>
             <?php endforeach; ?>
@@ -326,6 +346,34 @@ include_once __DIR__ . '/../dungchung/header.php';
                  placeholder="Ví dụ: Phòng 101, Phòng lầu 1 có gác..." required
                  class="w-full text-xs px-3.5 py-2.5 rounded-btn border border-border-warm bg-bg-sub/30 focus:outline-accent font-semibold text-text-main">
         </div>
+      </div>
+
+      <!-- Chỉnh vị trí & tọa độ bản đồ của nhà trọ -->
+      <div class="p-4 rounded-card bg-bg-sub/40 border border-border-warm space-y-3">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="md:col-span-1">
+            <label class="block text-xs font-semibold text-text-sub mb-1">Địa chỉ nhà trọ</label>
+            <input type="text" id="in_diachi_nt" name="dia_chi_nha_tro" value="<?= htmlspecialchars($_POST['dia_chi_nha_tro'] ?? $phong['DiaChi']) ?>"
+                   class="w-full text-xs px-3 py-2 rounded-btn border border-border-warm bg-bg-main focus:outline-accent">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-text-sub mb-1">Vĩ độ (Latitude)</label>
+            <input type="number" step="0.0000001" id="in_vido" name="vi_do" value="<?= htmlspecialchars($_POST['vi_do'] ?? ($phong['ViDo'] ?? '10.3728000')) ?>"
+                   class="w-full text-xs px-3 py-2 rounded-btn border border-border-warm bg-bg-main focus:outline-accent tnum">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-text-sub mb-1">Kinh độ (Longitude)</label>
+            <input type="number" step="0.0000001" id="in_kinhdo" name="kinh_do" value="<?= htmlspecialchars($_POST['kinh_do'] ?? ($phong['KinhDo'] ?? '105.4335000')) ?>"
+                   class="w-full text-xs px-3 py-2 rounded-btn border border-border-warm bg-bg-main focus:outline-accent tnum">
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <span class="text-text-sub font-semibold">Chỉnh ghim bản đồ:</span>
+          <button type="button" onclick="setEditGeo(10.3713741, 105.4324531)" class="px-2.5 py-1 rounded-btn border border-border-warm bg-bg-main hover:border-accent text-xs font-medium">Gần ĐH An Giang</button>
+          <button type="button" onclick="dungEditGPS()" class="px-2.5 py-1 rounded-btn border border-accent/40 bg-status-green-bg text-accent hover:bg-blue-100 text-xs font-semibold">Lấy vị trí GPS hiện tại</button>
+          <span class="text-[11px] text-text-sub">(Bấm hoặc kéo ghim đỏ đến đúng vị trí phòng trọ)</span>
+        </div>
+        <div id="picker-map" class="w-full h-60 rounded-card border border-border-warm overflow-hidden bg-slate-100" style="height: 240px;"></div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -499,5 +547,73 @@ include_once __DIR__ . '/../dungchung/header.php';
   </form>
 
 </div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>#picker-map .leaflet-pane img, #picker-map .leaflet-tile { max-width: none !important; max-height: none !important; }</style>
+<script>
+(function() {
+  const mapEl = document.getElementById('picker-map');
+  const inLat = document.getElementById('in_vido');
+  const inLng = document.getElementById('in_kinhdo');
+  const inDc  = document.getElementById('in_diachi_nt');
+  const selNT = document.getElementById('sel_nha_tro');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  const startLat = parseFloat(inLat?.value) || 10.3728;
+  const startLng = parseFloat(inLng?.value) || 105.4335;
+  const pMap = L.map('picker-map').setView([startLat, startLng], 15);
+  L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=vi&x={x}&y={y}&z={z}', {
+    maxZoom: 20, subdomains: ['0','1','2','3'], attribution: '&copy; Google Maps'
+  }).addTo(pMap);
+
+  const marker = L.marker([startLat, startLng], { draggable: true }).addTo(pMap);
+  function syncInputs(lat, lng) {
+    if (inLat) inLat.value = Number(lat).toFixed(7);
+    if (inLng) inLng.value = Number(lng).toFixed(7);
+  }
+  marker.on('dragend', () => {
+    const pos = marker.getLatLng();
+    syncInputs(pos.lat, pos.lng);
+  });
+  pMap.on('click', (e) => {
+    marker.setLatLng(e.latlng);
+    syncInputs(e.latlng.lat, e.latlng.lng);
+  });
+  window.setEditGeo = function(lat, lng) {
+    syncInputs(lat, lng);
+    marker.setLatLng([lat, lng]);
+    pMap.setView([lat, lng], 16);
+  };
+  window.dungEditGPS = function() {
+    if (!navigator.geolocation) return alert('Trình duyệt không hỗ trợ GPS.');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => window.setEditGeo(pos.coords.latitude, pos.coords.longitude),
+      () => alert('Không thể lấy vị trí GPS. Hãy bấm trực tiếp lên bản đồ.')
+    );
+  };
+  if (selNT) {
+    selNT.addEventListener('change', () => {
+      const opt = selNT.options[selNT.selectedIndex];
+      if (!opt) return;
+      if (inDc) inDc.value = opt.dataset.diachi || '';
+      const la = parseFloat(opt.dataset.vido), ln = parseFloat(opt.dataset.kinhdo);
+      if (!isNaN(la) && !isNaN(ln)) window.setEditGeo(la, ln);
+    });
+  }
+  if (inLat && inLng) {
+    [inLat, inLng].forEach(el => el.addEventListener('change', () => {
+      const la = parseFloat(inLat.value), ln = parseFloat(inLng.value);
+      if (!isNaN(la) && !isNaN(ln)) { marker.setLatLng([la, ln]); pMap.panTo([la, ln]); }
+    }));
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => pMap.invalidateSize()).observe(mapEl);
+  }
+  window.addEventListener('load', () => pMap.invalidateSize());
+  setTimeout(() => pMap.invalidateSize(), 200);
+  setTimeout(() => pMap.invalidateSize(), 600);
+})();
+</script>
 
 <?php include_once __DIR__ . '/../dungchung/footer.php'; ?>

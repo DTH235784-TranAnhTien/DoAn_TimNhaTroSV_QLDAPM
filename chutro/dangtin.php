@@ -14,7 +14,7 @@ if (!in_array($nd['vaitro'], ['ChuTro', 'QuanTriVien'])) {
 }
 
 // Lay danh sach nha tro cua chu tro
-$stmtNT = $conn->prepare("SELECT MaNhaTro, TenNhaTro, DiaChi FROM NhaTro WHERE MaChuTro = ?");
+$stmtNT = $conn->prepare("SELECT MaNhaTro, TenNhaTro, DiaChi, ViDo, KinhDo FROM NhaTro WHERE MaChuTro = ?");
 $stmtNT->bind_param('i', $mand);
 $stmtNT->execute();
 $dsNhaTro = $stmtNT->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -53,6 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $viDo = !empty($_POST['vi_do']) ? (float)$_POST['vi_do'] : null;
     $kinhDo = !empty($_POST['kinh_do']) ? (float)$_POST['kinh_do'] : null;
+
+    if ($maNhaTro > 0 && $viDo !== null && $kinhDo !== null) {
+        $stmtUpGeo = $conn->prepare("UPDATE NhaTro SET ViDo = ?, KinhDo = ? WHERE MaNhaTro = ? AND MaChuTro = ?");
+        $stmtUpGeo->bind_param('ddii', $viDo, $kinhDo, $maNhaTro, $mand);
+        $stmtUpGeo->execute();
+        $stmtUpGeo->close();
+    }
 
     // Nếu chủ trọ chưa có nhà trọ hoặc tạo nhà trọ mới
     if ($maNhaTro <= 0) {
@@ -178,7 +185,11 @@ include_once __DIR__ . '/../dungchung/header.php';
           <label class="block text-xs font-semibold text-text-main mb-1">Chọn nhà trọ đã có</label>
           <select name="ma_nha_tro" id="sel_nha_tro" onchange="toggleNewNhaTro(this.value)" class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
             <?php foreach ($dsNhaTro as $nt): ?>
-            <option value="<?= $nt['MaNhaTro'] ?>"><?= htmlspecialchars($nt['TenNhaTro']) ?> (<?= htmlspecialchars($nt['DiaChi']) ?>)</option>
+            <option value="<?= $nt['MaNhaTro'] ?>"
+                    data-vido="<?= htmlspecialchars($nt['ViDo'] ?? '10.3728000') ?>"
+                    data-kinhdo="<?= htmlspecialchars($nt['KinhDo'] ?? '105.4335000') ?>">
+              <?= htmlspecialchars($nt['TenNhaTro']) ?> (<?= htmlspecialchars($nt['DiaChi']) ?>)
+            </option>
             <?php endforeach; ?>
             <option value="0">+ Thêm nhà trọ mới...</option>
           </select>
@@ -194,21 +205,31 @@ include_once __DIR__ . '/../dungchung/header.php';
             <label class="block text-xs font-semibold text-text-main mb-1">Địa chỉ <span class="text-rose-500">*</span></label>
             <input type="text" name="dia_chi" placeholder="VD: Hẻm 12 Ung Văn Khiêm, P. Đông Xuyên, TP. Long Xuyên" class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
           </div>
+        </div>
+
+        <!-- Vị trí bản đồ (hiển thị cho cả nhà trọ đã có và nhà trọ mới) -->
+        <?php
+          $initLat = !empty($dsNhaTro[0]['ViDo']) ? $dsNhaTro[0]['ViDo'] : '10.3728000';
+          $initLng = !empty($dsNhaTro[0]['KinhDo']) ? $dsNhaTro[0]['KinhDo'] : '105.4335000';
+        ?>
+        <div class="space-y-2.5 pt-1">
           <div class="grid grid-cols-2 gap-3 tnum">
             <div>
-              <label class="block text-xs font-semibold text-text-main mb-1">Tọa độ Vĩ độ (Vĩ độ bản đồ)</label>
-              <input type="number" step="0.000001" id="in_vido" name="vi_do" placeholder="VD: 10.3720" class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
+              <label class="block text-xs font-semibold text-text-main mb-1">Vĩ độ (Latitude)</label>
+              <input type="number" step="0.0000001" id="in_vido" name="vi_do" value="<?= htmlspecialchars($initLat) ?>" placeholder="VD: 10.3728" class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-text-main mb-1">Tọa độ Kinh độ (Kinh độ bản đồ)</label>
-              <input type="number" step="0.000001" id="in_kinhdo" name="kinh_do" placeholder="VD: 105.4326" class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
+              <label class="block text-xs font-semibold text-text-main mb-1">Kinh độ (Longitude)</label>
+              <input type="number" step="0.0000001" id="in_kinhdo" name="kinh_do" value="<?= htmlspecialchars($initLng) ?>" placeholder="VD: 105.4335" class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent">
             </div>
           </div>
-          <div class="flex items-center gap-2 text-xs">
-            <span class="text-text-sub font-semibold">Chọn nhanh vị trí trên bản đồ:</span>
-            <button type="button" onclick="setGeo(10.3720, 105.4326)" class="px-2.5 py-0.5 rounded border border-border-warm bg-bg-main hover:border-accent text-xs">Gần Khu A (Đông Xuyên)</button>
-            <button type="button" onclick="setGeo(10.3789, 105.4385)" class="px-2.5 py-0.5 rounded border border-border-warm bg-bg-main hover:border-accent text-xs">Gần Khu B (Mỹ Xuyên)</button>
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="text-text-sub font-semibold">Chọn nhanh:</span>
+            <button type="button" onclick="setGeo(10.3713741, 105.4324531)" class="px-2.5 py-1 rounded-btn border border-border-warm bg-bg-main hover:border-accent text-xs font-medium">Gần ĐH An Giang</button>
+            <button type="button" onclick="dungGPS()" class="px-2.5 py-1 rounded-btn border border-accent/40 bg-status-green-bg text-accent hover:bg-blue-100 text-xs font-semibold">Lấy vị trí GPS hiện tại</button>
+            <span class="text-[11px] text-text-sub">(Hoặc bấm / kéo ghim trực tiếp trên bản đồ bên dưới)</span>
           </div>
+          <div id="picker-map" class="w-full h-60 rounded-card border border-border-warm overflow-hidden bg-slate-100" style="height: 240px;"></div>
         </div>
       </div>
 
@@ -332,8 +353,15 @@ function toggleNewNhaTro(val) {
   if (box) {
     if (val === '0') {
       box.classList.remove('hidden');
+      if (typeof window.setGeo === 'function') window.setGeo(10.3728, 105.4335);
     } else {
       box.classList.add('hidden');
+      const sel = document.getElementById('sel_nha_tro');
+      const opt = sel ? sel.options[sel.selectedIndex] : null;
+      if (opt && typeof window.setGeo === 'function') {
+        const la = parseFloat(opt.dataset.vido), ln = parseFloat(opt.dataset.kinhdo);
+        if (!isNaN(la) && !isNaN(ln)) window.setGeo(la, ln);
+      }
     }
   }
 }
@@ -432,6 +460,63 @@ function renderPreviews() {
     reader.readAsDataURL(file);
   });
 }
+</script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>#picker-map .leaflet-pane img, #picker-map .leaflet-tile { max-width: none !important; max-height: none !important; }</style>
+<script>
+(function() {
+  const mapEl = document.getElementById('picker-map');
+  const inLat = document.getElementById('in_vido');
+  const inLng = document.getElementById('in_kinhdo');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  const startLat = parseFloat(inLat?.value) || 10.3728;
+  const startLng = parseFloat(inLng?.value) || 105.4335;
+  const pMap = L.map('picker-map').setView([startLat, startLng], 15);
+  L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=vi&x={x}&y={y}&z={z}', {
+    maxZoom: 20, subdomains: ['0','1','2','3'], attribution: '&copy; Google Maps'
+  }).addTo(pMap);
+
+  const marker = L.marker([startLat, startLng], { draggable: true }).addTo(pMap);
+  function syncInputs(lat, lng) {
+    if (inLat) inLat.value = Number(lat).toFixed(7);
+    if (inLng) inLng.value = Number(lng).toFixed(7);
+  }
+  marker.on('dragend', () => {
+    const pos = marker.getLatLng();
+    syncInputs(pos.lat, pos.lng);
+  });
+  pMap.on('click', (e) => {
+    marker.setLatLng(e.latlng);
+    syncInputs(e.latlng.lat, e.latlng.lng);
+  });
+  window.setGeo = function(lat, lng) {
+    syncInputs(lat, lng);
+    marker.setLatLng([lat, lng]);
+    pMap.setView([lat, lng], 16);
+  };
+  window.dungGPS = function() {
+    if (!navigator.geolocation) return alert('Trình duyệt không hỗ trợ GPS.');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => window.setGeo(pos.coords.latitude, pos.coords.longitude),
+      () => alert('Không thể lấy vị trí GPS. Hãy bấm trực tiếp lên bản đồ.')
+    );
+  };
+  if (inLat && inLng) {
+    [inLat, inLng].forEach(el => el.addEventListener('change', () => {
+      const la = parseFloat(inLat.value), ln = parseFloat(inLng.value);
+      if (!isNaN(la) && !isNaN(ln)) { marker.setLatLng([la, ln]); pMap.panTo([la, ln]); }
+    }));
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => pMap.invalidateSize()).observe(mapEl);
+  }
+  window.addEventListener('load', () => pMap.invalidateSize());
+  setTimeout(() => pMap.invalidateSize(), 200);
+  setTimeout(() => pMap.invalidateSize(), 600);
+})();
 </script>
 
 <?php include_once __DIR__ . '/../dungchung/footer.php'; ?>\n
