@@ -18,6 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: /DoAn_TimNhaTroSV_QLDAPM/taikhoan/dangnhap.php');
             exit();
         }
+        if (!coVaiTro('SinhVien')) {
+            datThongBao('warning', 'Chỉ tài khoản Sinh viên mới có thể đăng hồ sơ tìm bạn ở ghép.');
+            header('Location: /DoAn_TimNhaTroSV_QLDAPM/ghepban.php');
+            exit();
+        }
 
         $gioiTinh    = $_POST['gioi_tinh'] ?? 'Nam';
         $nganSach    = (float)($_POST['ngan_sach'] ?? 0);
@@ -87,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($hanhDong === 'doi_trang_thai_ghep') {
-        if (daDangNhap()) {
+        if (daDangNhap() && coVaiTro('SinhVien')) {
             $stmtTT = $conn->prepare("
                 UPDATE HoSoGhepPhong
                 SET TrangThai = IF(TrangThai='DangTim', 'DaTimDuoc', 'DangTim')
@@ -277,10 +282,10 @@ if ($filterTag === 'khong-hut-thuoc') {
     $where[] = "h.GioGiac = 'Som'";
 } elseif ($filterTag === 'duoi-1m') {
     $where[] = "h.NganSachToiDa <= 1000000";
-} elseif ($filterTag === 'khu-a') {
-    $where[] = "(h.KhuVucUuTien LIKE '%Khu A%' OR h.KhuVucUuTien LIKE '%Ung Văn Khiêm%' OR h.KhuVucUuTien LIKE '%Đông Xuyên%')";
-} elseif ($filterTag === 'khu-b') {
-    $where[] = "(h.KhuVucUuTien LIKE '%Khu B%' OR h.KhuVucUuTien LIKE '%Võ Thị Sáu%' OR h.KhuVucUuTien LIKE '%Mỹ Xuyên%')";
+} elseif ($filterTag === 'gan-agu') {
+    $where[] = "(h.KhuVucUuTien LIKE '%ĐH An Giang%' OR h.KhuVucUuTien LIKE '%Ung Văn Khiêm%' OR h.KhuVucUuTien LIKE '%Đông Xuyên%' OR h.KhuVucUuTien LIKE '%AGU%')";
+} elseif ($filterTag === 'my-xuyen') {
+    $where[] = "(h.KhuVucUuTien LIKE '%Mỹ Xuyên%' OR h.KhuVucUuTien LIKE '%Võ Thị Sáu%' OR h.KhuVucUuTien LIKE '%Hà Hoàng Hổ%')";
 }
 
 $sql = "
@@ -550,14 +555,6 @@ include_once __DIR__ . '/dungchung/header.php';
       <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=duoi-1m"
          class="px-3 py-1 rounded-full border <?= $filterTag==='duoi-1m'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
         Ngân sách &le; 1 triệu
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=khu-a"
-         class="px-3 py-1 rounded-full border <?= $filterTag==='khu-a'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        Gần Khu A
-      </a>
-      <a href="/DoAn_TimNhaTroSV_QLDAPM/ghepban.php?tag=khu-b"
-         class="px-3 py-1 rounded-full border <?= $filterTag==='khu-b'?'bg-accent text-white border-accent':'bg-bg-main border-border-warm text-text-main card-hover' ?> transition-all duration-200">
-        Gần Khu B
       </a>
 
       <?php if ($q || $filterGioiTinh || $filterNganSach || $filterGioGiac || $filterKhuVuc || $filterTag): ?>

@@ -27,6 +27,13 @@ if ($resTI) {
     $dsTienIchAll = $resTI->fetch_all(MYSQLI_ASSOC);
 }
 
+// Lấy danh sách nhãn danh mục (cho AI gợi ý & chủ trọ chọn)
+$dsNhanAll = [];
+$resNhan = $conn->query("SELECT MaNhan, TenNhan FROM NhanDanhMuc ORDER BY MaNhan ASC");
+if ($resNhan) {
+    $dsNhanAll = $resNhan->fetch_all(MYSQLI_ASSOC);
+}
+
 $loi = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -135,6 +142,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
                 $stmtTI->close();
+            }
+
+            // Lưu nhãn danh mục phòng trọ
+            $nhanChon = $_POST['nhan'] ?? [];
+            if (!empty($nhanChon) && is_array($nhanChon)) {
+                $stmtN = $conn->prepare("INSERT INTO PhongTro_Nhan (MaPhong, MaNhan) VALUES (?, ?)");
+                foreach ($nhanChon as $mn) {
+                    $mn = (int)$mn;
+                    if ($mn > 0) {
+                        $stmtN->bind_param('ii', $maPhongMoi, $mn);
+                        $stmtN->execute();
+                    }
+                }
+                $stmtN->close();
             }
 
             datThongBao('success', 'Đăng tin phòng trọ thành công! ' . ($trangThaiDuyet === 'ChoDuyet' ? 'Tin đăng đang chờ Ban quản trị duyệt.' : ''));
@@ -306,6 +327,14 @@ include_once __DIR__ . '/../dungchung/header.php';
         <div>
           <label class="block text-xs font-semibold text-text-main mb-1">Mô tả thêm về phòng</label>
           <textarea name="mo_ta" rows="3" placeholder="Ghi chú thêm về tiện nghi, giờ giấc, an ninh, nội quy..." class="w-full px-3 py-2 rounded-btn border border-border-warm bg-bg-sub text-sm text-text-main outline-none focus:border-accent resize-none"></textarea>
+          <div class="flex items-center gap-3 mt-2">
+            <button type="button" id="btn-ai-nhan" onclick="aiGanNhan()"
+              class="inline-flex items-center gap-1.5 px-3 py-2 rounded-btn bg-accent/10 text-accent border border-accent/30 text-xs font-semibold hover:bg-accent/20 transition-all">
+              <span class="material-symbols-outlined text-sm">auto_awesome</span>
+              Gợi ý nhãn tự động (AI)
+            </button>
+            <span id="ai-nhan-status" class="text-xs text-text-sub hidden"></span>
+          </div>
         </div>
 
         <!-- Tiện ích phòng trọ -->
@@ -324,6 +353,23 @@ include_once __DIR__ . '/../dungchung/header.php';
                 <?php endif; ?>
                 <?= htmlspecialchars($ti['TenTienIch']) ?>
               </span>
+            </label>
+            <?php endforeach; ?>
+          </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Nhãn phân loại phòng trọ (AI gợi ý hoặc tự chọn) -->
+        <?php if (!empty($dsNhanAll)): ?>
+        <div class="space-y-2 pt-2">
+          <label class="block text-xs font-semibold text-text-main">
+            Nhãn phân loại <span class="text-text-sub text-[11px] font-normal">— Có thể bấm "Gợi ý nhãn tự động (AI)" ở trên hoặc tự chọn</span>
+          </label>
+          <div class="flex flex-wrap gap-2">
+            <?php foreach ($dsNhanAll as $nh): ?>
+            <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border-warm hover:border-accent bg-bg-sub/50 hover:bg-bg-sub cursor-pointer transition-colors text-xs text-text-main">
+              <input type="checkbox" name="nhan[]" value="<?= (int)$nh['MaNhan'] ?>" class="rounded accent-accent w-3.5 h-3.5 cursor-pointer">
+              <span class="font-medium"><?= htmlspecialchars($nh['TenNhan']) ?></span>
             </label>
             <?php endforeach; ?>
           </div>
@@ -517,6 +563,48 @@ function renderPreviews() {
   setTimeout(() => pMap.invalidateSize(), 200);
   setTimeout(() => pMap.invalidateSize(), 600);
 })();
+
+function aiGanNhan() {
+  var moTa = document.querySelector('[name="mo_ta"]');
+  if (!moTa || !moTa.value.trim()) {
+    alert('Vui lòng nhập mô tả phòng trước khi gợi ý nhãn.');
+    return;
+  }
+  var btn = document.getElementById('btn-ai-nhan');
+  var status = document.getElementById('ai-nhan-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Đang phân tích...';
+  status.classList.add('hidden');
+
+  var fd = new FormData();
+  fd.append('mo_ta', moTa.value);
+
+  fetch('/DoAn_TimNhaTroSV_QLDAPM/chutro/ai_gannhan.php', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">auto_awesome</span> Gợi ý nhãn tự động (AI)';
+      if (data.success && data.nhan_de_xuat && data.nhan_de_xuat.length > 0) {
+        data.nhan_de_xuat.forEach(function(n) {
+          var cb = document.querySelector('input[name="nhan[]"][value="' + n.MaNhan + '"]');
+          if (cb) cb.checked = true;
+        });
+        status.textContent = '✓ AI đã gợi ý ' + data.nhan_de_xuat.length + ' nhãn';
+        status.className = 'text-xs text-green-600 font-semibold';
+      } else {
+        status.textContent = data.message || 'Không tìm được nhãn phù hợp';
+        status.className = 'text-xs text-text-sub';
+      }
+      status.classList.remove('hidden');
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">auto_awesome</span> Gợi ý nhãn tự động (AI)';
+      status.textContent = 'Lỗi kết nối. Thử lại sau.';
+      status.className = 'text-xs text-status-red-text';
+      status.classList.remove('hidden');
+    });
+}
 </script>
 
 <?php include_once __DIR__ . '/../dungchung/footer.php'; ?>\n

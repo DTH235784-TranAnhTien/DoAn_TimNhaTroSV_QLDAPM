@@ -316,140 +316,186 @@ SELECT u.MaNguoiDung, 'Nhà trọ Minh Khang', '74 Thoại Ngọc Hầu, Mỹ Lo
 FROM NguoiDung u WHERE u.Email = 'anhminh@agu.edu.vn'
 AND NOT EXISTS (SELECT 1 FROM NhaTro WHERE TenNhaTro = 'Nhà trọ Minh Khang');
 
--- 4. Phong tro (10 phong tuong ung 10 bo anh trong giaodien/hinhanh/phongtro/)
+INSERT INTO NhaTro (MaChuTro, TenNhaTro, DiaChi, MoTa, ViDo, KinhDo)
+SELECT u.MaNguoiDung, 'Nhà trọ Bùi Văn Danh', '36 Bùi Văn Danh, Mỹ Xuyên, Long Xuyên', 'Gần chợ Mỹ Xuyên, phòng có gác lửng và máy lạnh.', 10.3782000, 105.4370000
+FROM NguoiDung u WHERE u.Email = 'chutu@agu.edu.vn'
+AND NOT EXISTS (SELECT 1 FROM NhaTro WHERE TenNhaTro = 'Nhà trọ Bùi Văn Danh');
+
+INSERT INTO NhaTro (MaChuTro, TenNhaTro, DiaChi, MoTa, ViDo, KinhDo)
+SELECT u.MaNguoiDung, 'Nhà trọ Ngọc Lan (Nữ riêng)', '14 Ngô Gia Tự, Mỹ Long, Long Xuyên', 'Khu trọ dành riêng cho sinh viên nữ, an ninh, có camera.', 10.3804000, 105.4392000
+FROM NguoiDung u WHERE u.Email = 'cosau@agu.edu.vn'
+AND NOT EXISTS (SELECT 1 FROM NhaTro WHERE TenNhaTro = 'Nhà trọ Ngọc Lan (Nữ riêng)');
+
+-- 4. Phong tro (12 phong da dang gia, dien tich, tien ich khop 12 bo anh trong giaodien/hinhanh/phongtro/)
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Cô Bảy' LIMIT 1),
-       'Phòng 101 - Gác lửng thoáng mát', 1800000, 22.0, 3500, 12000, 50000,
-       'Phòng rộng rãi có gác lửng, cửa sổ thoáng, cách ĐH An Giang chỉ 3 phút đi bộ. Có kệ bếp và WC riêng.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng 101 - Gác lửng thoáng mát');
+       'Phòng 101 - Gác lửng có máy lạnh', 1800000, 22.0, 3500, 12000, 50000,
+       'Phòng rộng rãi có gác lửng đúc kiên cố, máy lạnh tiết kiệm điện, cách ĐH An Giang 3 phút đi bộ. Có kệ bếp và WC khép kín.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng 101%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Cô Bảy (Cơ sở 2)' LIMIT 1),
-       'Phòng 202 - Full nội thất máy lạnh', 2400000, 25.0, 3500, 12000, 0,
-       'Trang bị sẵn máy lạnh, tủ lạnh, giường nệm và bàn học. Miễn phí wifi cáp quang tốc độ cao.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng 202 - Full nội thất máy lạnh');
+       'Phòng 202 - Full nội thất tủ lạnh', 2500000, 26.0, 3500, 12000, 0,
+       'Trang bị sẵn máy lạnh, tủ lạnh, giường nệm, bàn học và máy giặt dùng chung. Miễn phí wifi cáp quang tốc độ cao.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng 202%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Chú Tư' LIMIT 1),
-       'Phòng trọ 10 - Giá sinh viên', 1350000, 16.0, 3000, 10000, 30000,
-       'Phòng gọn gàng sạch sẽ, phù hợp 1-2 bạn sinh viên muốn tiết kiệm chi phí.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 10 - Giá sinh viên');
+       'Phòng trọ 10 - KTX / Ghép giá rẻ', 1050000, 14.0, 3000, 10000, 30000,
+       'Phòng KTX tư nhân gọn gàng, phù hợp sinh viên ở ghép tiết kiệm chi phí, giờ giấc tự do 24/7.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 10%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Chú Tư (Hẻm 2)' LIMIT 1),
-       'Phòng trọ 20 - Ban công rộng rãi', 1950000, 20.0, 3500, 12000, 50000,
-       'Có ban công phơi đồ riêng, ánh sáng tự nhiên tốt, khu vực an ninh có khóa vân tay.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 20 - Ban công rộng rãi');
+       'Phòng trọ 20 - Ban công rộng rãi', 1950000, 21.0, 3500, 12000, 50000,
+       'Có ban công phơi đồ riêng thoáng mát, không chung chủ, khóa vân tay an ninh, WC riêng khép kín.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 20%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Khu trọ Sinh Viên Cô Sáu' LIMIT 1),
-       'Phòng trọ 30 - Yên tĩnh gần cổng ĐH', 1500000, 18.0, 3500, 12000, 40000,
-       'Khu trọ toàn sinh viên, giờ giấc tự do, có chỗ để xe miễn phí trong nhà.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 30 - Yên tĩnh gần cổng ĐH');
+       'Phòng trọ 30 - Khu trọ nữ riêng yên tĩnh', 1450000, 18.0, 3500, 12000, 40000,
+       'Khu trọ dành riêng cho sinh viên nữ, không gian yên tĩnh học tập, camera an ninh 24/7 và chỗ để xe miễn phí.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 30%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Cô Sáu (Mỹ Quý)' LIMIT 1),
-       'Phòng trọ 40 - Giờ giấc tự do', 1700000, 20.0, 3500, 12000, 0,
-       'Không chung chủ, đi về thoải mái bằng thẻ từ. Phòng ốp gạch sạch sẽ, WC khép kín.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 40 - Giờ giấc tự do');
+       'Phòng trọ 40 - Khép kín giờ tự do 24/7', 1650000, 20.0, 3500, 12000, 0,
+       'Không chung chủ, đi về thoải mái giờ giấc tự do bằng thẻ từ. Phòng ốp gạch sạch sẽ, WC khép kín.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 40%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Dãy trọ Xanh AGU' LIMIT 1),
-       'Phòng trọ 50 - Studio mini hiện đại', 2600000, 26.0, 3500, 15000, 0,
-       'Thiết kế kiểu studio mới xây, đầy đủ máy lạnh, tủ đồ, kệ bếp và máy giặt dùng chung.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 50 - Studio mini hiện đại');
+       'Phòng trọ 50 - Studio mini cao cấp', 2800000, 28.0, 3500, 15000, 0,
+       'Thiết kế kiểu studio có ban công riêng, đầy đủ máy lạnh, tủ lạnh, kệ bếp và máy giặt dùng chung.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 50%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Chị Lan (Mỹ Xuyên)' LIMIT 1),
-       'Phòng trọ 60 - Gần chợ Mỹ Xuyên', 1850000, 21.0, 3500, 12000, 50000,
-       'Thuận tiện đi chợ, siêu thị và các tuyến xe buýt. Khu dân cư văn minh, yên tĩnh.', 'ConPhong', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 60 - Gần chợ Mỹ Xuyên');
+       'Phòng trọ 60 - Gác đúc gần chợ Mỹ Xuyên', 1750000, 22.0, 3500, 12000, 50000,
+       'Có gác đúc rộng rãi, thuận tiện đi chợ và các tuyến xe buýt. Khu dân cư văn minh, yên tĩnh.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 60%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ An Bình' LIMIT 1),
        'Phòng trọ 70 - Không chung chủ', 2100000, 23.0, 3500, 12000, 50000,
-       'Phòng rộng rãi cho nhóm 2-3 bạn ở ghép, có gác và khu phơi đồ riêng.', 'DaThue', 'DaDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 70 - Không chung chủ');
+       'Phòng rộng rãi cho nhóm 2-3 bạn ở ghép, có gác lửng và khu phơi đồ riêng.', 'DaThue', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 70%');
 
 INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
 SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Minh Khang' LIMIT 1),
        'Phòng trọ 80 - Phòng mới xây chờ duyệt', 2200000, 24.0, 3500, 12000, 0,
        'Phòng mới hoàn thiện, nội thất cơ bản, đang chờ quản trị viên duyệt tin.', 'ConPhong', 'ChoDuyet'
-WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong='Phòng trọ 80 - Phòng mới xây chờ duyệt');
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 80%');
+
+INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
+SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Bùi Văn Danh' LIMIT 1),
+       'Phòng trọ 90 - Có máy lạnh & gác lửng', 2050000, 23.0, 3500, 12000, 40000,
+       'Phòng mới sạch đẹp có cả gác lửng và máy lạnh, giờ giấc tự do, cách chợ Mỹ Xuyên 2 phút.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 90%');
+
+INSERT INTO PhongTro (MaNhaTro, TenPhong, GiaThue, DienTich, TienDien, TienNuoc, TienWifi, MoTa, TrangThai, TrangThaiDuyet)
+SELECT (SELECT MaNhaTro FROM NhaTro WHERE TenNhaTro='Nhà trọ Ngọc Lan (Nữ riêng)' LIMIT 1),
+       'Phòng trọ 100 - Khu nữ riêng có máy giặt', 1550000, 19.0, 3500, 12000, 0,
+       'Phòng dành riêng cho sinh viên nữ, có tủ lạnh, máy giặt dùng chung và camera an ninh 24/7.', 'ConPhong', 'DaDuyet'
+WHERE NOT EXISTS (SELECT 1 FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 100%');
 
 
 -- 5. Hinh anh phong tro (khop theo bo so anh trong giaodien/hinhanh/phongtro/)
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchammot.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng 101 - Gác lửng thoáng mát' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%motchammot.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchammot.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng 101%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%motchammot.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchamhai.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng 101 - Gác lửng thoáng mát' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%motchamhai.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchamhai.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng 101%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%motchamhai.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchamba.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng 101 - Gác lửng thoáng mát' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%motchamba.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/motchamba.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng 101%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%motchamba.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/phong_1_1795619458_1_69821c.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng 202 - Full nội thất máy lạnh' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%69821c.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/phong_1_1795619458_1_69821c.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng 202%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%69821c.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/phong_1_1795619458_2_59eb75.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng 202 - Full nội thất máy lạnh' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%59eb75.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/phong_1_1795619458_2_59eb75.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng 202%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%59eb75.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/phong_1_1795619458_3_c52c17.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng 202 - Full nội thất máy lạnh' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%c52c17.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/phong_1_1795619458_3_c52c17.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng 202%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%c52c17.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro10.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 10 - Giá sinh viên' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro10.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro10.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 10 -%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro10.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro20.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 20 - Ban công rộng rãi' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro20.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro20.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 20%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro20.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro21.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 20 - Ban công rộng rãi' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro21.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro21.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 20%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro21.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro30.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 30 - Yên tĩnh gần cổng ĐH' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro30.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro30.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 30%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro30.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro40.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 40 - Giờ giấc tự do' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro40.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro40.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 40%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro40.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro41.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 40 - Giờ giấc tự do' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro41.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro41.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 40%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro41.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro50.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 50 - Studio mini hiện đại' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro50.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro50.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 50%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro50.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro51.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 50 - Studio mini hiện đại' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro51.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro51.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 50%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro51.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro52.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 50 - Studio mini hiện đại' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro52.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro52.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 50%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro52.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro60.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 60 - Gần chợ Mỹ Xuyên' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro60.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro60.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 60%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro60.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro61.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 60 - Gần chợ Mỹ Xuyên' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro61.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro61.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 60%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro61.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro62.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 60 - Gần chợ Mỹ Xuyên' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro62.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro62.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 60%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro62.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro70.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 70 - Không chung chủ' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro70.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro70.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 70%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro70.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro71.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 70 - Không chung chủ' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro71.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro71.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 70%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro71.jpg');
 
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro80.jpg', 1 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 80 - Phòng mới xây chờ duyệt' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro80.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro80.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 80%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro80.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro81.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 80 - Phòng mới xây chờ duyệt' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro81.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro81.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 80%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro81.jpg');
 INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
-SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro82.jpg', 0 FROM PhongTro p WHERE p.TenPhong = 'Phòng trọ 80 - Phòng mới xây chờ duyệt' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro82.jpg');
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro82.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 80%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro82.jpg');
 
--- 6. Gan tien ich cho cac phong
+INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro90.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 90%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro90.jpg');
+INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro91.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 90%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro91.jpg');
+INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro92.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 90%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro92.jpg');
+
+INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro100.jpg', 1 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 100%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro100.jpg');
+INSERT INTO HinhAnhPhongTro (MaPhong, DuongDan, LaAnhChinh)
+SELECT p.MaPhong, '/DoAn_TimNhaTroSV_QLDAPM/giaodien/hinhanh/phongtro/tro101.jpg', 0 FROM PhongTro p WHERE p.TenPhong LIKE 'Phòng trọ 100%' AND NOT EXISTS (SELECT 1 FROM HinhAnhPhongTro h WHERE h.MaPhong = p.MaPhong AND h.DuongDan LIKE '%tro101.jpg');
+
+-- 6. Gan tien ich da dang cho tung phong (de loc nhieu tu khoa hieu qua)
 INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
-SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Wifi cáp quang', 'Vệ sinh riêng khép kín', 'Chỗ để xe an toàn');
+SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Wifi cáp quang', 'Chỗ để xe an toàn');
 
 INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
-SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Gác lửng', 'Camera an ninh 24/7')
-WHERE p.TenPhong IN ('Phòng 101 - Gác lửng thoáng mát', 'Phòng trọ 70 - Không chung chủ');
+SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Vệ sinh riêng khép kín')
+WHERE p.TenPhong NOT LIKE 'Phòng trọ 10 -%';
 
 INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
-SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Máy lạnh / Điều hòa', 'Tủ lạnh', 'Máy giặt dùng chung')
-WHERE p.TenPhong IN ('Phòng 202 - Full nội thất máy lạnh', 'Phòng trọ 50 - Studio mini hiện đại');
+SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Gác lửng')
+WHERE p.TenPhong LIKE 'Phòng 101%' OR p.TenPhong LIKE 'Phòng trọ 60%' OR p.TenPhong LIKE 'Phòng trọ 70%' OR p.TenPhong LIKE 'Phòng trọ 90%';
+
+INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
+SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Máy lạnh / Điều hòa')
+WHERE p.TenPhong LIKE 'Phòng 101%' OR p.TenPhong LIKE 'Phòng 202%' OR p.TenPhong LIKE 'Phòng trọ 50%' OR p.TenPhong LIKE 'Phòng trọ 90%';
+
+INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
+SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Tủ lạnh', 'Máy giặt dùng chung')
+WHERE p.TenPhong LIKE 'Phòng 202%' OR p.TenPhong LIKE 'Phòng trọ 50%' OR p.TenPhong LIKE 'Phòng trọ 100%';
+
+INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
+SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Camera an ninh 24/7')
+WHERE p.TenPhong LIKE 'Phòng 101%' OR p.TenPhong LIKE 'Phòng trọ 30%' OR p.TenPhong LIKE 'Phòng trọ 100%';
 
 INSERT IGNORE INTO PhongTro_TienIch (MaPhong, MaTienIch)
 SELECT p.MaPhong, t.MaTienIch FROM PhongTro p JOIN TienIch t ON t.TenTienIch IN ('Giờ giấc tự do', 'Không chung chủ')
-WHERE p.TenPhong IN ('Phòng trọ 30 - Yên tĩnh gần cổng ĐH', 'Phòng trọ 40 - Giờ giấc tự do', 'Phòng trọ 70 - Không chung chủ');
+WHERE p.TenPhong LIKE 'Phòng trọ 10 -%' OR p.TenPhong LIKE 'Phòng trọ 20%' OR p.TenPhong LIKE 'Phòng trọ 40%' OR p.TenPhong LIKE 'Phòng trọ 50%' OR p.TenPhong LIKE 'Phòng trọ 90%';
 
 -- 7. Ho so ghep phong cho sinh vien
 INSERT IGNORE INTO HoSoGhepPhong (MaSinhVien, GioiTinh, NganSachToiDa, KhuVucUuTien, GioGiac, HutThuoc, NuoiThuCung, MoTaBanThan, TrangThai)
@@ -492,39 +538,39 @@ FROM NguoiDung WHERE Email = 'ngochuyen.k22@agu.edu.vn';
 -- 8. Lich hen xem phong mau
 INSERT INTO LichHen (MaSinhVien, MaPhong, NgayHen, GioHen, GhiChu, PhanHoiChuTro, TrangThai)
 SELECT (SELECT MaNguoiDung FROM NguoiDung WHERE Email='sv.k22@agu.edu.vn' LIMIT 1),
-       (SELECT MaPhong FROM PhongTro WHERE TenPhong='Phòng 101 - Gác lửng thoáng mát' LIMIT 1),
+       (SELECT MaPhong FROM PhongTro WHERE TenPhong LIKE 'Phòng 101%' LIMIT 1),
        DATE_ADD(CURDATE(), INTERVAL 1 DAY), '09:00:00', 'Em muốn xem phòng buổi sáng ạ.', NULL, 'ChoDuyet'
 WHERE NOT EXISTS (SELECT 1 FROM LichHen WHERE GhiChu = 'Em muốn xem phòng buổi sáng ạ.');
 
 INSERT INTO LichHen (MaSinhVien, MaPhong, NgayHen, GioHen, GhiChu, PhanHoiChuTro, TrangThai)
 SELECT (SELECT MaNguoiDung FROM NguoiDung WHERE Email='nam.k23@agu.edu.vn' LIMIT 1),
-       (SELECT MaPhong FROM PhongTro WHERE TenPhong='Phòng 202 - Full nội thất máy lạnh' LIMIT 1),
+       (SELECT MaPhong FROM PhongTro WHERE TenPhong LIKE 'Phòng 202%' LIMIT 1),
        DATE_ADD(CURDATE(), INTERVAL 2 DAY), '15:30:00', 'Em qua xem phòng 202 chiều thứ 5 nhé cô.', 'Cô ở nhà từ 15h, tới cổng gọi cô nha con.', 'DaXacNhan'
 WHERE NOT EXISTS (SELECT 1 FROM LichHen WHERE GhiChu = 'Em qua xem phòng 202 chiều thứ 5 nhé cô.');
 
 INSERT INTO LichHen (MaSinhVien, MaPhong, NgayHen, GioHen, GhiChu, PhanHoiChuTro, TrangThai)
 SELECT (SELECT MaNguoiDung FROM NguoiDung WHERE Email='vy.k22@agu.edu.vn' LIMIT 1),
-       (SELECT MaPhong FROM PhongTro WHERE TenPhong='Phòng trọ 30 - Yên tĩnh gần cổng ĐH' LIMIT 1),
+       (SELECT MaPhong FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 30%' LIMIT 1),
        DATE_SUB(CURDATE(), INTERVAL 3 DAY), '10:00:00', 'Em đã xem phòng trọ 30.', 'Cảm ơn em đã ghé xem phòng.', 'HoanThanh'
 WHERE NOT EXISTS (SELECT 1 FROM LichHen WHERE GhiChu = 'Em đã xem phòng trọ 30.');
 
 -- 9. Danh gia mau
 INSERT INTO DanhGia (MaSinhVien, MaPhong, SoSao, DiemAnNinh, DiemGiaCa, DiemThaiDoChuTro, NoiDung)
 SELECT (SELECT MaNguoiDung FROM NguoiDung WHERE Email='vy.k22@agu.edu.vn' LIMIT 1),
-       (SELECT MaPhong FROM PhongTro WHERE TenPhong='Phòng trọ 30 - Yên tĩnh gần cổng ĐH' LIMIT 1),
+       (SELECT MaPhong FROM PhongTro WHERE TenPhong LIKE 'Phòng trọ 30%' LIMIT 1),
        5, 5, 5, 5, 'Phòng sạch sẽ, cô chủ trọ rất nhiệt tình và thân thiện, đi bộ tới trường rất gần.'
 WHERE NOT EXISTS (SELECT 1 FROM DanhGia WHERE NoiDung LIKE 'Phòng sạch sẽ, cô chủ trọ%');
 
 INSERT INTO DanhGia (MaSinhVien, MaPhong, SoSao, DiemAnNinh, DiemGiaCa, DiemThaiDoChuTro, NoiDung)
 SELECT (SELECT MaNguoiDung FROM NguoiDung WHERE Email='sv.k22@agu.edu.vn' LIMIT 1),
-       (SELECT MaPhong FROM PhongTro WHERE TenPhong='Phòng 101 - Gác lửng thoáng mát' LIMIT 1),
+       (SELECT MaPhong FROM PhongTro WHERE TenPhong LIKE 'Phòng 101%' LIMIT 1),
        4, 5, 4, 5, 'Khu vực an ninh tốt, có camera, gác lửng rộng rãi.'
 WHERE NOT EXISTS (SELECT 1 FROM DanhGia WHERE NoiDung LIKE 'Khu vực an ninh tốt%');
 
 -- 10. Yeu thich mau
 INSERT IGNORE INTO DanhSachYeuThich (MaSinhVien, MaPhong)
 SELECT u.MaNguoiDung, p.MaPhong FROM NguoiDung u, PhongTro p
-WHERE u.Email = 'sv.k22@agu.edu.vn' AND p.TenPhong IN ('Phòng 101 - Gác lửng thoáng mát', 'Phòng 202 - Full nội thất máy lạnh', 'Phòng trọ 50 - Studio mini hiện đại');
+WHERE u.Email = 'sv.k22@agu.edu.vn' AND (p.TenPhong LIKE 'Phòng 101%' OR p.TenPhong LIKE 'Phòng 202%' OR p.TenPhong LIKE 'Phòng trọ 50%');
 
 
 -- 11. Bao cao vi pham mau cho Admin kiem duyet
@@ -533,4 +579,3 @@ SELECT (SELECT MaNguoiDung FROM NguoiDung WHERE Email='sv.k22@agu.edu.vn' LIMIT 
        (SELECT MaPhong FROM PhongTro WHERE TenPhong='Phòng trọ 80 - Phòng mới xây chờ duyệt' LIMIT 1),
        'Thông tin giá chưa rõ ràng', 'Sinh viên phản ánh tin đăng chưa ghi rõ chi phí giữ xe và tiền rác hàng tháng.', 'ChoXuLy'
 WHERE NOT EXISTS (SELECT 1 FROM BaoCaoViPham WHERE LyDo = 'Thông tin giá chưa rõ ràng');
-
