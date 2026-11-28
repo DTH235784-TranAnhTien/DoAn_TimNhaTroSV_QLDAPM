@@ -116,7 +116,7 @@ include_once __DIR__ . '/../dungchung/header.php';
           <label for="matkhau" class="block text-xs font-semibold text-text-main">
             Mật khẩu xác thực <span class="text-rose-600">*</span>
           </label>
-          <a href="#" onclick="showToast('Vui lòng liên hệ Văn phòng Đoàn AGU (0296.384.3144) để cấp lại mật khẩu.', 'info'); return false;" class="text-xs text-accent font-semibold hover:underline">
+          <a href="/DoAn_TimNhaTroSV_QLDAPM/taikhoan/quenmatkhau.php" class="text-xs text-accent font-semibold hover:underline">
             Quên mật khẩu?
           </a>
         </div>
